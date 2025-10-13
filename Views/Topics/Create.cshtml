@@ -1,0 +1,77 @@
+@model CETExamApp.Models.Topic
+@{
+    ViewData["Title"] = "Create Topic";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-plus-circle"></i> Create New Topic (Subject-wise & Class-wise)</h4>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    
+                    <div class="form-floating mb-3">
+                        <input asp-for="Name" class="form-control" placeholder="Topic Name" />
+                        <label asp-for="Name">Topic Name</label>
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input asp-for="Code" class="form-control" placeholder="Topic Code" />
+                        <label asp-for="Code">Topic Code</label>
+                        <span asp-validation-for="Code" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <select asp-for="SubjectId" class="form-select" asp-items="ViewBag.SubjectId">
+                                    <option value="">-- Select Subject --</option>
+                                </select>
+                                <label asp-for="SubjectId">Subject</label>
+                                <span asp-validation-for="SubjectId" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <select asp-for="ClassId" class="form-select" asp-items="ViewBag.ClassId">
+                                    <option value="">-- Select Class --</option>
+                                </select>
+                                <label asp-for="ClassId">Class</label>
+                                <span asp-validation-for="ClassId" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        <textarea asp-for="Description" class="form-control" placeholder="Description" style="height: 100px"></textarea>
+                        <label asp-for="Description">Description</label>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input asp-for="IsActive" class="form-check-input" checked />
+                        <label asp-for="IsActive" class="form-check-label">Active</label>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to List
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Create
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+

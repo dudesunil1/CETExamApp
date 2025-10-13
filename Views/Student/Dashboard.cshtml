@@ -1,0 +1,278 @@
+@model ApplicationUser
+@using CETExamApp.Models
+@{
+    ViewData["Title"] = "Student Dashboard";
+    var upcomingTests = ViewBag.UpcomingTests as List<TestAllocation>;
+    var completedTests = ViewBag.CompletedTests as List<TestResult>;
+    var inProgressTests = ViewBag.InProgressTests as List<TestAttempt>;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-speedometer2"></i> My Dashboard</h1>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Profile Card -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-9">
+                        <h4>Welcome, @Model.FirstName @Model.LastName!</h4>
+                        <p class="mb-1"><strong>Class:</strong> @Model.Class?.Name | <strong>Group:</strong> @Model.Group?.Name</p>
+                        <p class="mb-1"><strong>Email:</strong> @Model.Email</p>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        @if (!string.IsNullOrEmpty(Model.PhotoPath))
+                        {
+                            <img src="@Model.PhotoPath" alt="Photo" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;" />
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary shadow">
+            <div class="card-body text-center">
+                <i class="bi bi-calendar-check display-4"></i>
+                <h3 class="mt-2">@(upcomingTests?.Count ?? 0)</h3>
+                <p class="mb-0">Upcoming Tests</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success shadow">
+            <div class="card-body text-center">
+                <i class="bi bi-check-circle display-4"></i>
+                <h3 class="mt-2">@(completedTests?.Count ?? 0)</h3>
+                <p class="mb-0">Completed Tests</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-info shadow">
+            <div class="card-body text-center">
+                <i class="bi bi-trophy display-4"></i>
+                <h3 class="mt-2">@(completedTests?.Any() == true ? completedTests.Average(t => t.Percentage).ToString("0.00") : "0.00")%</h3>
+                <p class="mb-0">Average Score</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- In-Progress Tests -->
+@if (inProgressTests?.Any() == true)
+{
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow border-warning">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0"><i class="bi bi-hourglass-split"></i> Tests In Progress</h5>
+                </div>
+                <div class="card-body">
+                    @foreach (var attempt in inProgressTests)
+                    {
+                        <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>@attempt.Test?.Title</strong> (@attempt.Test?.Subject?.Name)
+                                <br/>
+                                <small>Started: @attempt.StartedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small>
+                            </div>
+                            <a asp-action="TakeTest" asp-route-attemptId="@attempt.Id" class="btn btn-warning">
+                                <i class="bi bi-play-circle"></i> Resume Test
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Upcoming Tests -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Upcoming Tests</h5>
+            </div>
+            <div class="card-body">
+                @if (upcomingTests?.Any() == true)
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Test Name</th>
+                                    <th>Subject</th>
+                                    <th>Questions</th>
+                                    <th>Duration</th>
+                                    <th>Scheduled Time</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var allocation in upcomingTests)
+                                {
+                                    var canStart = !allocation.ScheduledStartTime.HasValue || DateTime.UtcNow >= allocation.ScheduledStartTime.Value;
+                                    var isExpired = allocation.ScheduledEndTime.HasValue && DateTime.UtcNow > allocation.ScheduledEndTime.Value && !allocation.Test!.AllowLateSubmission;
+                                    
+                                    <tr>
+                                        <td><strong>@allocation.Test?.Title</strong></td>
+                                        <td><span class="badge bg-info">@allocation.Test?.Subject?.Name</span></td>
+                                        <td>@allocation.Test?.TestQuestions?.Count</td>
+                                        <td>@allocation.Test?.DurationMinutes min</td>
+                                        <td>
+                                            @if (allocation.ScheduledStartTime.HasValue)
+                                            {
+                                                @allocation.ScheduledStartTime.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Anytime</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (isExpired)
+                                            {
+                                                <span class="badge bg-danger">Expired</span>
+                                            }
+                                            else if (canStart)
+                                            {
+                                                <span class="badge bg-success">Available</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning">Scheduled</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (!isExpired && canStart)
+                                            {
+                                                <a asp-action="StartTest" asp-route-allocationId="@allocation.Id" class="btn btn-sm btn-success" onclick="return confirm('Are you ready to start the test? The timer will begin immediately.');">
+                                                    <i class="bi bi-play-circle"></i> Start Test
+                                                </a>
+                                            }
+                                            else if (!canStart)
+                                            {
+                                                <button class="btn btn-sm btn-secondary" disabled>
+                                                    <i class="bi bi-lock"></i> Not Yet
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-sm btn-danger" disabled>
+                                                    <i class="bi bi-x-circle"></i> Expired
+                                                </button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No upcoming tests at the moment.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Completed Tests -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Completed Tests</h5>
+            </div>
+            <div class="card-body">
+                @if (completedTests?.Any() == true)
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Test Name</th>
+                                    <th>Subject</th>
+                                    <th>Completed On</th>
+                                    <th>Score</th>
+                                    <th>Percentage</th>
+                                    <th>Result</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var result in completedTests)
+                                {
+                                    <tr>
+                                        <td><strong>@result.Test?.Title</strong></td>
+                                        <td><span class="badge bg-info">@result.Test?.Subject?.Name</span></td>
+                                        <td>@result.SubmittedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>@result.ObtainedMarks / @result.TotalMarks</td>
+                                        <td>@result.Percentage.ToString("0.00")%</td>
+                                        <td>
+                                            @if (result.IsPassed)
+                                            {
+                                                <span class="badge bg-success">PASS</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">FAIL</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @{
+                                                var resultToAttemptMap = ViewBag.ResultToAttemptMap as Dictionary<int, int>;
+                                                var attemptId = resultToAttemptMap?.ContainsKey(result.Id) == true ? resultToAttemptMap[result.Id] : 0;
+                                            }
+                                            @if (attemptId > 0)
+                                            {
+                                                <a asp-action="TestReview" asp-route-attemptId="@attemptId" class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-eye"></i> View Review
+                                                </a>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No completed tests yet.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+

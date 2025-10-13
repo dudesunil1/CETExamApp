@@ -1,0 +1,224 @@
+@using CETExamApp.Models
+@{
+    ViewData["Title"] = "Test Review";
+    
+    var attempt = ViewBag.TestAttempt as TestAttempt;
+    var testResult = ViewBag.TestResult as TestResult;
+    var questions = ViewBag.Questions as List<TestQuestion>;
+    var showAnswers = (bool)ViewBag.ShowAnswers;
+}
+
+<div class="container mt-4">
+    <!-- Result Summary Card -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow border-@(testResult!.IsPassed ? "success" : "danger")">
+                <div class="card-header bg-@(testResult.IsPassed ? "success" : "danger") text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-@(testResult.IsPassed ? "check-circle" : "x-circle")"></i> 
+                        Test @(testResult.IsPassed ? "PASSED" : "FAILED")
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <h5>@attempt?.Test?.Title</h5>
+                    <p><strong>Subject:</strong> @attempt?.Test?.Subject?.Name</p>
+                    
+                    <div class="row text-center mt-4">
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h3>@testResult.ObtainedMarks / @testResult.TotalMarks</h3>
+                                    <p class="mb-0">Score</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h3>@testResult.Percentage.ToString("0.00")%</h3>
+                                    <p class="mb-0">Percentage</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h3>@testResult.TimeTakenMinutes min</h3>
+                                    <p class="mb-0">Time Taken</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h3 class="@(testResult.IsPassed ? "text-success" : "text-danger")">
+                                        @(testResult.IsPassed ? "PASS" : "FAIL")
+                                    </h3>
+                                    <p class="mb-0">Result</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!showAnswers)
+                    {
+                        <div class="alert alert-info mt-4">
+                            <i class="bi bi-info-circle"></i> <strong>Note:</strong> Correct answers and explanations are not available for this test.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Questions Review -->
+    @if (showAnswers)
+    {
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-list-check"></i> Answer Review</h5>
+                    </div>
+                    <div class="card-body">
+                        @{ int qNum = 1; }
+                        @foreach (var tq in questions!)
+                        {
+                            var studentAnswer = testResult.StudentAnswers?.FirstOrDefault(sa => sa.QuestionId == tq.QuestionId);
+                            var isCorrect = studentAnswer?.IsCorrect ?? false;
+                            
+                            <div class="card mb-4 border-@(isCorrect ? "success" : "danger")">
+                                <div class="card-header @(isCorrect ? "bg-success bg-opacity-10" : "bg-danger bg-opacity-10")">
+                                    <div class="row">
+                                        <div class="col-md-10">
+                                            <strong>Question @qNum</strong>
+                                            <span class="badge bg-secondary ms-2">@tq.Question?.Topic?.Name</span>
+                                        </div>
+                                        <div class="col-md-2 text-end">
+                                            @if (isCorrect)
+                                            {
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-circle"></i> Correct (@studentAnswer?.MarksObtained / @tq.Marks)
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">
+                                                    <i class="bi bi-x-circle"></i> Wrong (0 / @tq.Marks)
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Question -->
+                                    <h6>Question:</h6>
+                                    <p style="white-space: pre-wrap;">@tq.Question?.QuestionText</p>
+                                    @if (!string.IsNullOrEmpty(tq.Question?.QuestionImagePath))
+                                    {
+                                        <img src="@tq.Question.QuestionImagePath" alt="Question" class="img-fluid mb-3" style="max-width: 500px;" />
+                                    }
+
+                                    <!-- Options -->
+                                    @if (tq.Question?.QuestionType != QuestionType.TrueFalse)
+                                    {
+                                        <div class="mt-3">
+                                            <h6>Options:</h6>
+                                            <div class="list-group">
+                                                @{
+                                                    var options = new[] {
+                                                        new { Label = "A", Text = tq.Question?.OptionA, Image = tq.Question?.OptionAImagePath },
+                                                        new { Label = "B", Text = tq.Question?.OptionB, Image = tq.Question?.OptionBImagePath },
+                                                        new { Label = "C", Text = tq.Question?.OptionC, Image = tq.Question?.OptionCImagePath },
+                                                        new { Label = "D", Text = tq.Question?.QuestionType == QuestionType.MCQWithAllOfAbove ? "All of the above" : tq.Question?.OptionD, Image = tq.Question?.OptionDImagePath }
+                                                    };
+                                                }
+                                                @foreach (var opt in options)
+                                                {
+                                                    if (!string.IsNullOrEmpty(opt.Text))
+                                                    {
+                                                        var isCorrectAnswer = tq.Question?.CorrectAnswer == opt.Label;
+                                                        var isStudentAnswer = studentAnswer?.AnswerText == opt.Label;
+                                                        
+                                                        <div class="list-group-item @(isCorrectAnswer ? "list-group-item-success" : "")">
+                                                            <strong>@opt.Label.</strong> @opt.Text
+                                                            @if (!string.IsNullOrEmpty(opt.Image))
+                                                            {
+                                                                <br /><img src="@opt.Image" alt="Option @opt.Label" class="img-fluid mt-2" style="max-width: 250px;" />
+                                                            }
+                                                            @if (isCorrectAnswer)
+                                                            {
+                                                                <span class="badge bg-success float-end">Correct Answer</span>
+                                                            }
+                                                            @if (isStudentAnswer && !isCorrect)
+                                                            {
+                                                                <span class="badge bg-danger float-end">Your Answer</span>
+                                                            }
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="mt-3">
+                                            <div class="alert alert-@(isCorrect ? "success" : "danger")">
+                                                <strong>Your Answer:</strong> @(studentAnswer?.AnswerText ?? "Not Answered")
+                                            </div>
+                                            <div class="alert alert-success">
+                                                <strong>Correct Answer:</strong> @tq.Question?.CorrectAnswer
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <!-- Explanation -->
+                                    @if (!string.IsNullOrEmpty(tq.Question?.Explanation))
+                                    {
+                                        <div class="alert alert-info mt-3">
+                                            <h6><i class="bi bi-lightbulb"></i> Explanation:</h6>
+                                            <p style="white-space: pre-wrap;">@tq.Question.Explanation</p>
+                                            @if (!string.IsNullOrEmpty(tq.Question?.ExplanationImagePath))
+                                            {
+                                                <img src="@tq.Question.ExplanationImagePath" alt="Explanation" class="img-fluid mt-2" style="max-width: 400px;" />
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            qNum++;
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Just show summary without answers -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="alert alert-info">
+                    <h5><i class="bi bi-info-circle"></i> Your Test Summary</h5>
+                    <p>You have successfully submitted the test. Your responses have been recorded.</p>
+                    <p class="mb-0">The detailed results and correct answers will be made available by your instructor.</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Action Buttons -->
+    <div class="row mt-4">
+        <div class="col-md-12 text-center">
+            <a asp-action="Dashboard" class="btn btn-primary btn-lg">
+                <i class="bi bi-house"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+}
+

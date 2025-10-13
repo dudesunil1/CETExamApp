@@ -1,0 +1,197 @@
+@model CETExamApp.Models.Question
+@{
+    ViewData["Title"] = "Create Question";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-plus-circle"></i> Create New Question (with Image Support)</h4>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post" enctype="multipart/form-data">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> <strong>Tip:</strong> You can add images to questions, options, and explanations. Math equations can be written using LaTeX format (e.g., $$x^2 + y^2 = z^2$$)
+                    </div>
+
+                    <h5 class="mb-3 text-primary"><i class="bi bi-gear"></i> Question Settings</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <select asp-for="TopicId" class="form-select" asp-items="ViewBag.TopicId">
+                                    <option value="">-- Select Topic --</option>
+                                </select>
+                                <label asp-for="TopicId">Topic</label>
+                                <span asp-validation-for="TopicId" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-floating mb-3">
+                                <select asp-for="QuestionType" class="form-select" id="questionType">
+                                    <option value="0">MCQ</option>
+                                    <option value="1">True/False</option>
+                                    <option value="2">MCQ (All of Above)</option>
+                                </select>
+                                <label asp-for="QuestionType">Question Type</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-floating mb-3">
+                                <select asp-for="DifficultyLevel" class="form-select">
+                                    <option value="0">Easy</option>
+                                    <option value="1">Medium</option>
+                                    <option value="2">Hard</option>
+                                </select>
+                                <label asp-for="DifficultyLevel">Difficulty</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 text-primary"><i class="bi bi-question-circle"></i> Question Content</h5>
+
+                    <div class="form-floating mb-3">
+                        <textarea asp-for="QuestionText" class="form-control" placeholder="Question Text" style="height: 120px"></textarea>
+                        <label asp-for="QuestionText">Question Text (Can include LaTeX equations)</label>
+                        <span asp-validation-for="QuestionText" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Question Image (Optional)</label>
+                        <input type="file" name="questionImage" class="form-control" accept="image/*" />
+                        <small class="text-muted">Upload image for diagrams, graphs, or complex equations</small>
+                    </div>
+
+                    <div id="mcqOptions">
+                        <h5 class="mb-3 text-primary"><i class="bi bi-list-check"></i> Answer Options (3 wrong + 1 correct = 4 total)</h5>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">Option A</div>
+                            <div class="card-body">
+                                <textarea asp-for="OptionA" class="form-control mb-2" rows="2" placeholder="Option A text"></textarea>
+                                <input type="file" name="optionAImage" class="form-control" accept="image/*" />
+                                <small class="text-muted">Optional image for this option</small>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">Option B</div>
+                            <div class="card-body">
+                                <textarea asp-for="OptionB" class="form-control mb-2" rows="2" placeholder="Option B text"></textarea>
+                                <input type="file" name="optionBImage" class="form-control" accept="image/*" />
+                                <small class="text-muted">Optional image for this option</small>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">Option C</div>
+                            <div class="card-body">
+                                <textarea asp-for="OptionC" class="form-control mb-2" rows="2" placeholder="Option C text"></textarea>
+                                <input type="file" name="optionCImage" class="form-control" accept="image/*" />
+                                <small class="text-muted">Optional image for this option</small>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3" id="optionDCard">
+                            <div class="card-header bg-light">Option D <span id="allOfAboveLabel" class="badge bg-warning" style="display:none;">Auto: All of the above</span></div>
+                            <div class="card-body" id="optionDContent">
+                                <textarea asp-for="OptionD" class="form-control mb-2" rows="2" placeholder="Option D text"></textarea>
+                                <input type="file" name="optionDImage" class="form-control" accept="image/*" />
+                                <small class="text-muted">Optional image for this option</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="trueFalseOptions" style="display:none;">
+                        <h5 class="mb-3 text-primary"><i class="bi bi-check-circle"></i> True/False Question</h5>
+                        <div class="alert alert-warning">
+                            For True/False questions, enter either "True" or "False" in the Correct Answer field below.
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 text-primary"><i class="bi bi-check-circle-fill"></i> Correct Answer & Explanation</h5>
+
+                    <div class="form-floating mb-3">
+                        <input asp-for="CorrectAnswer" class="form-control" placeholder="Correct Answer" />
+                        <label asp-for="CorrectAnswer">Correct Answer</label>
+                        <span asp-validation-for="CorrectAnswer" class="text-danger"></span>
+                        <small class="text-muted" id="answerHint">For MCQ: Enter option letter (A, B, C, or D). For True/False: Enter "True" or "False"</small>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <textarea asp-for="Explanation" class="form-control" placeholder="Explanation" style="height: 100px"></textarea>
+                        <label asp-for="Explanation">Explanation (Optional)</label>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Explanation Image (Optional)</label>
+                        <input type="file" name="explanationImage" class="form-control" accept="image/*" />
+                        <small class="text-muted">Upload image to explain the answer</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input asp-for="Marks" class="form-control" type="number" min="1" max="100" placeholder="Marks" value="1" />
+                                <label asp-for="Marks">Marks</label>
+                                <span asp-validation-for="Marks" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-3">
+                                <input asp-for="IsActive" class="form-check-input" checked />
+                                <label asp-for="IsActive" class="form-check-label">Active</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to List
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle"></i> Create Question
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById('questionType').addEventListener('change', function() {
+            var mcqOptions = document.getElementById('mcqOptions');
+            var trueFalseOptions = document.getElementById('trueFalseOptions');
+            var optionDContent = document.getElementById('optionDContent');
+            var allOfAboveLabel = document.getElementById('allOfAboveLabel');
+            var answerHint = document.getElementById('answerHint');
+            
+            if (this.value == '0') { // MCQ
+                mcqOptions.style.display = 'block';
+                trueFalseOptions.style.display = 'none';
+                optionDContent.style.display = 'block';
+                allOfAboveLabel.style.display = 'none';
+                answerHint.textContent = 'For MCQ: Enter option letter (A, B, C, or D)';
+            } else if (this.value == '1') { // True/False
+                mcqOptions.style.display = 'none';
+                trueFalseOptions.style.display = 'block';
+                answerHint.textContent = 'For True/False: Enter "True" or "False"';
+            } else if (this.value == '2') { // MCQ with All of Above
+                mcqOptions.style.display = 'block';
+                trueFalseOptions.style.display = 'none';
+                optionDContent.style.display = 'none';
+                allOfAboveLabel.style.display = 'inline';
+                answerHint.textContent = 'For MCQ (All of Above): Enter A, B, C, or D. Option D is automatically "All of the above"';
+            }
+        });
+    </script>
+}
+
+
+

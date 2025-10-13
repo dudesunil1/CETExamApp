@@ -1,0 +1,71 @@
+@model CETExamApp.Models.TestAllocation
+@{
+    ViewData["Title"] = "Reschedule Test";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-white">
+                <h4 class="mb-0"><i class="bi bi-calendar-event"></i> Reschedule Test for Student</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <strong>Test:</strong> @Model.Test?.Title<br/>
+                    <strong>Student:</strong> @Model.Student?.FirstName @Model.Student?.LastName (@Model.Student?.Email)<br/>
+                    <strong>Group:</strong> @Model.Student?.Group?.Name
+                </div>
+
+                <form asp-action="Reschedule" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Current Start Time</label>
+                                <input type="text" class="form-control" value="@Model.ScheduledStartTime?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")" readonly />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Current End Time</label>
+                                <input type="text" class="form-control" value="@Model.ScheduledEndTime?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")" readonly />
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <h5 class="mb-3">New Schedule</h5>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">New Start Time</label>
+                                <input type="datetime-local" name="scheduledStartTime" class="form-control" required 
+                                       value="@Model.ScheduledStartTime?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">New End Time</label>
+                                <input type="datetime-local" name="scheduledEndTime" class="form-control" required 
+                                       value="@Model.ScheduledEndTime?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-warning btn-lg">
+                            <i class="bi bi-calendar-check"></i> Reschedule
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+

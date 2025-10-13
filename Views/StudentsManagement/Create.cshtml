@@ -1,0 +1,170 @@
+@model CETExamApp.Models.ViewModels.StudentRegistrationViewModel
+@{
+    ViewData["Title"] = "Register Student";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-person-plus"></i> Register New Student</h4>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post" enctype="multipart/form-data">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    
+                    <h5 class="mb-3 text-primary"><i class="bi bi-person-badge"></i> Personal Information</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input asp-for="FirstName" class="form-control" placeholder="First Name" />
+                                <label asp-for="FirstName">First Name</label>
+                                <span asp-validation-for="FirstName" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input asp-for="LastName" class="form-control" placeholder="Last Name" />
+                                <label asp-for="LastName">Last Name</label>
+                                <span asp-validation-for="LastName" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <select asp-for="ClassId" class="form-select" asp-items="ViewBag.ClassId">
+                                    <option value="">-- Select Class --</option>
+                                </select>
+                                <label asp-for="ClassId">Class</label>
+                                <span asp-validation-for="ClassId" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <select asp-for="GroupId" class="form-select" asp-items="ViewBag.GroupId">
+                                    <option value="">-- Select Group --</option>
+                                </select>
+                                <label asp-for="GroupId">Group (PCMB/PCB/PCM)</label>
+                                <span asp-validation-for="GroupId" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Photo" class="form-label">Student Photo</label>
+                        <input asp-for="Photo" class="form-control" type="file" accept="image/*" id="photoInput" onchange="previewImage(event)" />
+                        <span asp-validation-for="Photo" class="text-danger"></span>
+                        <small class="text-muted">Upload student photo (JPG, PNG)</small>
+                        
+                        <!-- Image Preview -->
+                        <div id="imagePreview" class="mt-3" style="display: none;">
+                            <img id="preview" src="" alt="Photo Preview" class="img-thumbnail" style="max-width: 200px; max-height: 200px;" />
+                            <button type="button" class="btn btn-sm btn-danger ms-2" onclick="clearImage()">
+                                <i class="bi bi-x-circle"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 mt-4 text-primary"><i class="bi bi-telephone"></i> Contact Information</h5>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input asp-for="MobileNo" class="form-control" placeholder="Mobile Number" />
+                                <label asp-for="MobileNo">Mobile Number</label>
+                                <span asp-validation-for="MobileNo" class="text-danger"></span>
+                                <small class="text-muted">Student's mobile number</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input asp-for="ParentsMobileNo" class="form-control" placeholder="Parent's Mobile Number" />
+                                <label asp-for="ParentsMobileNo">Parent's Mobile Number (Optional)</label>
+                                <span asp-validation-for="ParentsMobileNo" class="text-danger"></span>
+                                <small class="text-muted">Parent's or guardian's mobile number</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 mt-4 text-primary"><i class="bi bi-shield-lock"></i> Login Credentials</h5>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input asp-for="Username" class="form-control" placeholder="Username" />
+                                <label asp-for="Username">Username</label>
+                                <span asp-validation-for="Username" class="text-danger"></span>
+                                <small class="text-muted">Student will login with this username</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input asp-for="Email" class="form-control" placeholder="Email" />
+                                <label asp-for="Email">Email (Optional)</label>
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                                <small class="text-muted">For notifications and communication</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input asp-for="Password" class="form-control" placeholder="Password" />
+                                <label asp-for="Password">Password</label>
+                                <span asp-validation-for="Password" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input asp-for="ConfirmPassword" class="form-control" placeholder="Confirm Password" />
+                                <label asp-for="ConfirmPassword">Confirm Password</label>
+                                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> <strong>Note:</strong> The student will be automatically assigned the "Student" role and can login with the provided username and password.
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to List
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle"></i> Register Student
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('preview').src = e.target.result;
+                    document.getElementById('imagePreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function clearImage() {
+            document.getElementById('photoInput').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('preview').src = '';
+        }
+    </script>
+}

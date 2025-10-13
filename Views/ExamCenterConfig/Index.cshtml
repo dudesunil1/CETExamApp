@@ -1,0 +1,118 @@
+@model CETExamApp.Models.ExamCenterConfig
+@{
+    ViewData["Title"] = "Exam Center Configuration";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-gear"></i> Exam Center Configuration</h4>
+            </div>
+            <div class="card-body">
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show">
+                        @TempData["Success"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                <form asp-action="Update" method="post" enctype="multipart/form-data">
+                    <input type="hidden" asp-for="Id" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    
+                    <h5 class="mb-3">Basic Information</h5>
+                    
+                    <div class="form-floating mb-3">
+                        <input asp-for="CenterName" class="form-control" placeholder="Center Name" />
+                        <label asp-for="CenterName">Center Name</label>
+                        <span asp-validation-for="CenterName" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Logo</label>
+                        @if (!string.IsNullOrEmpty(Model.LogoPath))
+                        {
+                            <div class="mb-2">
+                                <img src="@Model.LogoPath" alt="Current Logo" style="max-height: 100px;" class="border rounded p-2" />
+                            </div>
+                        }
+                        <input type="file" name="logoFile" class="form-control" accept="image/*" />
+                        <small class="text-muted">Upload a new logo (optional, will replace current logo)</small>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <textarea asp-for="Address" class="form-control" placeholder="Address" style="height: 100px"></textarea>
+                        <label asp-for="Address">Address</label>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <input asp-for="Phone" class="form-control" placeholder="Phone" />
+                                <label asp-for="Phone">Phone</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <input asp-for="Email" class="form-control" placeholder="Email" />
+                                <label asp-for="Email">Email</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <input asp-for="Website" class="form-control" placeholder="Website" />
+                                <label asp-for="Website">Website</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 mt-4">Branding</h5>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="PrimaryColor" class="form-label">Primary Color</label>
+                                <input asp-for="PrimaryColor" type="color" class="form-control form-control-color" />
+                                <small class="text-muted">Main brand color for buttons and headers</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="SecondaryColor" class="form-label">Secondary Color</label>
+                                <input asp-for="SecondaryColor" type="color" class="form-control form-control-color" />
+                                <small class="text-muted">Secondary brand color</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (Model.LastUpdated != default(DateTime))
+                    {
+                        <div class="alert alert-info">
+                            <small>
+                                <i class="bi bi-info-circle"></i>
+                                Last updated: @Model.LastUpdated.ToLocalTime().ToString("dd/MM/yyyy HH:mm") 
+                                @if (!string.IsNullOrEmpty(Model.UpdatedBy))
+                                {
+                                    <text>by @Model.UpdatedBy</text>
+                                }
+                            </small>
+                        </div>
+                    }
+                    
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle"></i> Update Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+

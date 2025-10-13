@@ -1,0 +1,280 @@
+@model IEnumerable<CETExamApp.Models.TestResult>
+@{
+    ViewData["Title"] = "Test Results & Reports";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-graph-up"></i> Test Results & Reports</h2>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-file-bar-graph"></i> Available Reports</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <div class="d-grid">
+                            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#studentReportModal">
+                                <i class="bi bi-person-lines-fill"></i><br />Student-wise Result
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <div class="d-grid">
+                            <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#topicReportModal">
+                                <i class="bi bi-bookmark-star"></i><br />Topic-wise Performance
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <div class="d-grid">
+                            <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#testReportModal">
+                                <i class="bi bi-file-earmark-bar-graph"></i><br />Test-wise Summary
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <div class="d-grid">
+                            <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#resultCardModal">
+                                <i class="bi bi-card-checklist"></i><br />Result Card
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card shadow mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label">Filter by Test</label>
+                <select name="testId" class="form-select" asp-items="ViewBag.TestId">
+                    <option value="">All Tests</option>
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label">Filter by Student</label>
+                <select name="studentId" class="form-select" asp-items="ViewBag.StudentId">
+                    <option value="">All Students</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Test</th>
+                        <th>Student</th>
+                        <th>Submitted</th>
+                        <th>Obtained Marks</th>
+                        <th>Total Marks</th>
+                        <th>Percentage</th>
+                        <th>Result</th>
+                        <th>Time Taken</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.Test?.Title</td>
+                            <td>@item.Student?.FirstName @item.Student?.LastName</td>
+                            <td>@item.SubmittedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@item.ObtainedMarks</td>
+                            <td>@item.TotalMarks</td>
+                            <td>@item.Percentage.ToString("0.00")%</td>
+                            <td>
+                                @if (item.IsPassed)
+                                {
+                                    <span class="badge bg-success">Passed</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Failed</span>
+                                }
+                            </td>
+                            <td>@item.TimeTakenMinutes min</td>
+                            <td>
+                                <a asp-action="DetailedAnswerKey" asp-route-resultId="@item.Id" class="btn btn-sm btn-info" title="Answer Key">
+                                    <i class="bi bi-key"></i>
+                                </a>
+                                <a asp-action="StudentWiseResult" asp-route-studentId="@item.StudentId" class="btn btn-sm btn-primary" title="Student Report">
+                                    <i class="bi bi-person"></i>
+                                </a>
+                                <a asp-action="ExportAnswerKeyPDF" asp-route-resultId="@item.Id" class="btn btn-sm btn-danger" title="Export PDF">
+                                    <i class="bi bi-file-pdf"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modals for Report Selection -->
+
+<!-- Student Report Modal -->
+<div class="modal fade" id="studentReportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-person-lines-fill"></i> Generate Student-wise Result</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form asp-action="StudentWiseResult" method="get">
+                    <div class="form-floating mb-3">
+                        <select name="studentId" class="form-select" asp-items="ViewBag.StudentId" required>
+                            <option value="">-- Select Student --</option>
+                        </select>
+                        <label>Select Student</label>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-file-earmark-text"></i> Generate Report
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Topic Report Modal -->
+<div class="modal fade" id="topicReportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-bookmark-star"></i> Generate Topic-wise Performance</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form asp-action="TopicWisePerformance" method="get">
+                    <div class="form-floating mb-3">
+                        <select name="testId" class="form-select" asp-items="ViewBag.TestId" required>
+                            <option value="">-- Select Test --</option>
+                        </select>
+                        <label>Select Test</label>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-bar-chart"></i> Generate Analysis
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Report Modal -->
+<div class="modal fade" id="testReportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="bi bi-file-earmark-bar-graph"></i> Generate Test-wise Summary</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form asp-action="TestWiseSummary" method="get">
+                    <div class="form-floating mb-3">
+                        <select name="testId" class="form-select" asp-items="ViewBag.TestId" required>
+                            <option value="">-- Select Test --</option>
+                        </select>
+                        <label>Select Test</label>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-info">
+                            <i class="bi bi-file-text"></i> View Summary
+                        </button>
+                    </div>
+                </form>
+                <hr />
+                <p class="mb-2"><strong>Export Options:</strong></p>
+                <form asp-action="ExportTestResultsExcel" method="get">
+                    <div class="form-floating mb-2">
+                        <select name="testId" class="form-select" asp-items="ViewBag.TestId" required>
+                            <option value="">-- Select Test --</option>
+                        </select>
+                        <label>Select Test for Export</label>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-file-excel"></i> Export to Excel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Result Card Modal -->
+<div class="modal fade" id="resultCardModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title"><i class="bi bi-card-checklist"></i> Generate Result Card</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form asp-action="ResultCard" method="get">
+                    <div class="form-floating mb-3">
+                        <select name="studentId" class="form-select" asp-items="ViewBag.StudentId" required>
+                            <option value="">-- Select Student --</option>
+                        </select>
+                        <label>Select Student</label>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-file-earmark"></i> View Result Card
+                        </button>
+                    </div>
+                </form>
+                <hr />
+                <p class="mb-2"><strong>Download PDF:</strong></p>
+                <form asp-action="ExportStudentResultPDF" method="get">
+                    <div class="form-floating mb-2">
+                        <select name="studentId" class="form-select" asp-items="ViewBag.StudentId" required>
+                            <option value="">-- Select Student --</option>
+                        </select>
+                        <label>Select Student</label>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-file-pdf"></i> Download PDF
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+

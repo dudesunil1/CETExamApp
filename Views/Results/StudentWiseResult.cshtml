@@ -1,0 +1,232 @@
+@model CETExamApp.Models.ViewModels.StudentResultViewModel
+@{
+    ViewData["Title"] = "Student-wise Test Result";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-person-circle"></i> Student-wise Test Result</h4>
+                <a asp-action="ExportStudentResultPDF" asp-route-studentId="@Model.Student?.Id" class="btn btn-light btn-sm">
+                    <i class="bi bi-file-pdf"></i> Export PDF
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5>@Model.Student?.FirstName @Model.Student?.LastName</h5>
+                        <p class="mb-1"><strong>Class:</strong> @Model.Student?.Class?.Name</p>
+                        <p class="mb-1"><strong>Group:</strong> @Model.Student?.Group?.Name</p>
+                        <p class="mb-1"><strong>Email:</strong> @Model.Student?.Email</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        @if (!string.IsNullOrEmpty(Model.Student?.PhotoPath))
+                        {
+                            <img src="@Model.Student.PhotoPath" alt="Photo" class="rounded" style="max-width: 120px; max-height: 120px;" />
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center">
+                <h3>@Model.TotalTestsTaken</h3>
+                <p class="mb-0">Tests Taken</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h3>@Model.TestsPassed</h3>
+                <p class="mb-0">Passed</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body text-center">
+                <h3>@Model.TestsFailed</h3>
+                <p class="mb-0">Failed</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h3>@Model.AveragePercentage.ToString("0.00")%</h3>
+                <p class="mb-0">Average</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Subject-wise Performance -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-book"></i> Subject-wise Performance</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>Tests Count</th>
+                                <th>Total Marks Obtained</th>
+                                <th>Total Max Marks</th>
+                                <th>Average %</th>
+                                <th>Performance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var subject in Model.SubjectWisePerformance.Values)
+                            {
+                                <tr>
+                                    <td><strong>@subject.SubjectName</strong></td>
+                                    <td>@subject.TestsCount</td>
+                                    <td>@subject.TotalMarksObtained</td>
+                                    <td>@subject.TotalMaxMarks</td>
+                                    <td>@subject.AveragePercentage.ToString("0.00")%</td>
+                                    <td>
+                                        <div class="progress" style="height: 25px;">
+                                            <div class="progress-bar @(subject.AveragePercentage >= 75 ? "bg-success" : subject.AveragePercentage >= 50 ? "bg-warning" : "bg-danger")" 
+                                                 style="width: @subject.AveragePercentage%">
+                                                @subject.AveragePercentage.ToString("0.00")%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Topic-wise Performance -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-bookmark"></i> Topic-wise Performance</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Topic</th>
+                                <th>Questions</th>
+                                <th>Correct</th>
+                                <th>Wrong</th>
+                                <th>Marks Obtained</th>
+                                <th>Total Marks</th>
+                                <th>%</th>
+                                <th>Performance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var topic in Model.TopicWisePerformance.Values.OrderByDescending(t => t.Percentage))
+                            {
+                                <tr>
+                                    <td><strong>@topic.TopicName</strong></td>
+                                    <td>@topic.QuestionsAttempted</td>
+                                    <td><span class="badge bg-success">@topic.CorrectAnswers</span></td>
+                                    <td><span class="badge bg-danger">@topic.WrongAnswers</span></td>
+                                    <td>@topic.MarksObtained</td>
+                                    <td>@topic.TotalMarks</td>
+                                    <td>@topic.Percentage.ToString("0.00")%</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar @(topic.Percentage >= 75 ? "bg-success" : topic.Percentage >= 50 ? "bg-warning" : "bg-danger")" 
+                                                 style="width: @topic.Percentage%">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Results List -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0"><i class="bi bi-list-check"></i> All Test Results</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Test Name</th>
+                                <th>Subject</th>
+                                <th>Date</th>
+                                <th>Obtained</th>
+                                <th>Total</th>
+                                <th>%</th>
+                                <th>Result</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var result in Model.TestResults)
+                            {
+                                <tr>
+                                    <td>@result.Test?.Title</td>
+                                    <td><span class="badge bg-info">@result.Test?.Subject?.Name</span></td>
+                                    <td>@result.SubmittedAt?.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                                    <td>@result.ObtainedMarks</td>
+                                    <td>@result.TotalMarks</td>
+                                    <td>@result.Percentage.ToString("0.00")%</td>
+                                    <td>
+                                        @if (result.IsPassed)
+                                        {
+                                            <span class="badge bg-success">PASS</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">FAIL</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-action="DetailedAnswerKey" asp-route-resultId="@result.Id" class="btn btn-sm btn-info">
+                                            <i class="bi bi-eye"></i> Answer Key
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a asp-action="Index" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Results
+    </a>
+    <a asp-action="ResultCard" asp-route-studentId="@Model.Student?.Id" class="btn btn-primary">
+        <i class="bi bi-file-earmark-text"></i> View Result Card
+    </a>
+</div>
+

@@ -1,0 +1,204 @@
+@model CETExamApp.Models.ViewModels.DetailedAnswerKeyViewModel
+@{
+    ViewData["Title"] = "Detailed Answer Key";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-key"></i> Detailed Answer Key</h4>
+                <a asp-action="ExportAnswerKeyPDF" asp-route-resultId="@Model.TestResult?.Id" class="btn btn-light btn-sm">
+                    <i class="bi bi-file-pdf"></i> Export PDF
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h5>@Model.Test?.Title</h5>
+                        <p><strong>Subject:</strong> @Model.Test?.Subject?.Name</p>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <h5>@Model.Student?.FirstName @Model.Student?.LastName</h5>
+                        <p><strong>Class:</strong> @Model.Student?.Class?.Name | <strong>Group:</strong> @Model.Student?.Group?.Name</p>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h4>@Model.TestResult?.ObtainedMarks / @Model.TestResult?.TotalMarks</h4>
+                                <p class="mb-0">Score</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h4>@Model.TestResult?.Percentage.ToString("0.00")%</h4>
+                                <p class="mb-0">Percentage</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h4 class="@(Model.TestResult?.IsPassed == true ? "text-success" : "text-danger")">
+                                    @(Model.TestResult?.IsPassed == true ? "PASS" : "FAIL")
+                                </h4>
+                                <p class="mb-0">Result</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h4>@Model.TestResult?.TimeTakenMinutes min</h4>
+                                <p class="mb-0">Time Taken</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Question-by-Question Analysis -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-list-ol"></i> Question-by-Question Analysis</h5>
+            </div>
+            <div class="card-body">
+                @foreach (var answer in Model.Answers)
+                {
+                    <div class="card mb-3 @(answer.IsCorrect ? "border-success" : "border-danger")">
+                        <div class="card-header @(answer.IsCorrect ? "bg-success bg-opacity-10" : "bg-danger bg-opacity-10")">
+                            <div class="row">
+                                <div class="col-md-10">
+                                    <strong>Question @answer.QuestionNumber</strong>
+                                    <span class="badge bg-secondary ms-2">@answer.Question?.Topic?.Name</span>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <span class="badge @(answer.IsCorrect ? "bg-success" : "bg-danger")">
+                                        @answer.MarksObtained / @answer.MaxMarks marks
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Question -->
+                            <div class="mb-3">
+                                <h6>Question:</h6>
+                                <p>@answer.Question?.QuestionText</p>
+                                @if (!string.IsNullOrEmpty(answer.Question?.QuestionImagePath))
+                                {
+                                    <img src="@answer.Question.QuestionImagePath" alt="Question" class="img-fluid" style="max-width: 400px;" />
+                                }
+                            </div>
+
+                            <!-- Options (for MCQ) -->
+                            @if (answer.Question?.QuestionType != CETExamApp.Models.QuestionType.TrueFalse)
+                            {
+                                <div class="mb-3">
+                                    <h6>Options:</h6>
+                                    <div class="list-group">
+                                        <div class="list-group-item @(answer.Question?.CorrectAnswer == "A" ? "list-group-item-success" : "")">
+                                            <strong>A.</strong> @answer.Question?.OptionA
+                                            @if (answer.Question?.CorrectAnswer == "A")
+                                            {
+                                                <span class="badge bg-success float-end">Correct</span>
+                                            }
+                                        </div>
+                                        <div class="list-group-item @(answer.Question?.CorrectAnswer == "B" ? "list-group-item-success" : "")">
+                                            <strong>B.</strong> @answer.Question?.OptionB
+                                            @if (answer.Question?.CorrectAnswer == "B")
+                                            {
+                                                <span class="badge bg-success float-end">Correct</span>
+                                            }
+                                        </div>
+                                        <div class="list-group-item @(answer.Question?.CorrectAnswer == "C" ? "list-group-item-success" : "")">
+                                            <strong>C.</strong> @answer.Question?.OptionC
+                                            @if (answer.Question?.CorrectAnswer == "C")
+                                            {
+                                                <span class="badge bg-success float-end">Correct</span>
+                                            }
+                                        </div>
+                                        <div class="list-group-item @(answer.Question?.CorrectAnswer == "D" ? "list-group-item-success" : "")">
+                                            <strong>D.</strong> 
+                                            @if (answer.Question?.QuestionType == CETExamApp.Models.QuestionType.MCQWithAllOfAbove)
+                                            {
+                                                <text>All of the above</text>
+                                            }
+                                            else
+                                            {
+                                                @answer.Question?.OptionD
+                                            }
+                                            @if (answer.Question?.CorrectAnswer == "D")
+                                            {
+                                                <span class="badge bg-success float-end">Correct</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Student's Answer -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="alert alert-success">
+                                        <strong>Correct Answer:</strong> @answer.Question?.CorrectAnswer
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="alert @(answer.IsCorrect ? "alert-success" : "alert-danger")">
+                                        <strong>Student's Answer:</strong> @(answer.Answer?.AnswerText ?? "Not Answered")
+                                        @if (answer.IsCorrect)
+                                        {
+                                            <i class="bi bi-check-circle float-end"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-x-circle float-end"></i>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Explanation -->
+                            @if (!string.IsNullOrEmpty(answer.Question?.Explanation))
+                            {
+                                <div class="alert alert-info">
+                                    <strong><i class="bi bi-info-circle"></i> Explanation:</strong>
+                                    <p class="mb-0 mt-2">@answer.Question.Explanation</p>
+                                    @if (!string.IsNullOrEmpty(answer.Question?.ExplanationImagePath))
+                                    {
+                                        <img src="@answer.Question.ExplanationImagePath" alt="Explanation" class="img-fluid mt-2" style="max-width: 400px;" />
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a asp-action="Index" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Results
+    </a>
+    <a asp-action="StudentWiseResult" asp-route-studentId="@Model.Student?.Id" class="btn btn-primary">
+        <i class="bi bi-person"></i> Student Report
+    </a>
+</div>
+
+@section Scripts {
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+}
+

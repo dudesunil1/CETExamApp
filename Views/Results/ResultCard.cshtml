@@ -1,0 +1,231 @@
+@model CETExamApp.Models.ViewModels.StudentResultViewModel
+@{
+    ViewData["Title"] = "Result Card";
+}
+
+<div class="result-card" style="max-width: 900px; margin: 0 auto;">
+    <div class="card shadow-lg border-0">
+        <!-- Header -->
+        <div class="card-header bg-gradient text-white text-center py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <h2 class="mb-0"><i class="bi bi-award"></i> STUDENT RESULT CARD</h2>
+            <p class="mb-0">Academic Performance Report</p>
+        </div>
+
+        <!-- Student Info -->
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h3 class="text-primary">@Model.Student?.FirstName @Model.Student?.LastName</h3>
+                    <table class="table table-borderless mb-0">
+                        <tr>
+                            <td width="150"><strong>Class:</strong></td>
+                            <td>@Model.Student?.Class?.Name</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Group:</strong></td>
+                            <td>@Model.Student?.Group?.Name</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Email:</strong></td>
+                            <td>@Model.Student?.Email</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mobile:</strong></td>
+                            <td>@Model.Student?.MobileNo</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-4 text-center">
+                    @if (!string.IsNullOrEmpty(Model.Student?.PhotoPath))
+                    {
+                        <img src="@Model.Student.PhotoPath" alt="Photo" class="img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;" />
+                    }
+                    else
+                    {
+                        <div class="bg-secondary rounded d-inline-flex align-items-center justify-content-center text-white" style="width: 150px; height: 150px;">
+                            <i class="bi bi-person" style="font-size: 4rem;"></i>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <hr />
+
+            <!-- Overall Performance -->
+            <h4 class="mb-3"><i class="bi bi-graph-up"></i> Overall Performance</h4>
+            <div class="row mb-4">
+                <div class="col-md-3 text-center">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h2 class="text-primary">@Model.TotalTestsTaken</h2>
+                            <p class="mb-0">Tests Taken</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h2 class="text-success">@Model.TestsPassed</h2>
+                            <p class="mb-0">Passed</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h2 class="text-danger">@Model.TestsFailed</h2>
+                            <p class="mb-0">Failed</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h2 class="text-info">@Model.AveragePercentage.ToString("0.00")%</h2>
+                            <p class="mb-0">Average</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subject-wise Performance -->
+            <h4 class="mb-3"><i class="bi bi-book"></i> Subject-wise Performance</h4>
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Subject</th>
+                            <th>Tests</th>
+                            <th>Marks Obtained</th>
+                            <th>Total Marks</th>
+                            <th>Average %</th>
+                            <th>Grade</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var subject in Model.SubjectWisePerformance.Values)
+                        {
+                            <tr>
+                                <td><strong>@subject.SubjectName</strong></td>
+                                <td>@subject.TestsCount</td>
+                                <td>@subject.TotalMarksObtained</td>
+                                <td>@subject.TotalMaxMarks</td>
+                                <td>@subject.AveragePercentage.ToString("0.00")%</td>
+                                <td>
+                                    @{
+                                        var grade = subject.AveragePercentage >= 90 ? "A+" :
+                                                    subject.AveragePercentage >= 80 ? "A" :
+                                                    subject.AveragePercentage >= 70 ? "B+" :
+                                                    subject.AveragePercentage >= 60 ? "B" :
+                                                    subject.AveragePercentage >= 50 ? "C" :
+                                                    subject.AveragePercentage >= 40 ? "D" : "F";
+                                        
+                                        var gradeColor = subject.AveragePercentage >= 70 ? "success" :
+                                                        subject.AveragePercentage >= 50 ? "warning" : "danger";
+                                    }
+                                    <span class="badge bg-@gradeColor">@grade</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Test Results -->
+            <h4 class="mb-3"><i class="bi bi-clipboard-check"></i> Test Results</h4>
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Test Name</th>
+                            <th>Subject</th>
+                            <th>Date</th>
+                            <th>Obtained</th>
+                            <th>Total</th>
+                            <th>%</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ int testNo = 1; }
+                        @foreach (var result in Model.TestResults)
+                        {
+                            <tr>
+                                <td>@testNo</td>
+                                <td>@result.Test?.Title</td>
+                                <td>@result.Test?.Subject?.Name</td>
+                                <td>@result.SubmittedAt?.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                                <td>@result.ObtainedMarks</td>
+                                <td>@result.TotalMarks</td>
+                                <td>@result.Percentage.ToString("0.00")%</td>
+                                <td>
+                                    @if (result.IsPassed)
+                                    {
+                                        <span class="badge bg-success">PASS</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">FAIL</span>
+                                    }
+                                </td>
+                            </tr>
+                            testNo++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Final Grade -->
+            <div class="text-center py-4 bg-light rounded">
+                <h3>Overall Grade: 
+                    @{
+                        var overallGrade = Model.AveragePercentage >= 90 ? "A+" :
+                                          Model.AveragePercentage >= 80 ? "A" :
+                                          Model.AveragePercentage >= 70 ? "B+" :
+                                          Model.AveragePercentage >= 60 ? "B" :
+                                          Model.AveragePercentage >= 50 ? "C" :
+                                          Model.AveragePercentage >= 40 ? "D" : "F";
+                        
+                        var badgeColor = Model.AveragePercentage >= 70 ? "success" :
+                                        Model.AveragePercentage >= 50 ? "warning" : "danger";
+                    }
+                    <span class="badge bg-@badgeColor" style="font-size: 2rem;">@overallGrade</span>
+                </h3>
+                <p class="text-muted">Generated on: @DateTime.Now.ToString("dd MMMM yyyy")</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="card-footer text-center bg-light">
+            <small class="text-muted">This is an official document. For queries, contact the exam center.</small>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mt-4 no-print">
+    <a asp-action="Index" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Results
+    </a>
+    <a asp-action="ExportStudentResultPDF" asp-route-studentId="@Model.Student?.Id" class="btn btn-danger">
+        <i class="bi bi-file-pdf"></i> Download PDF
+    </a>
+    <button onclick="window.print()" class="btn btn-primary">
+        <i class="bi bi-printer"></i> Print
+    </button>
+</div>
+
+@section Scripts {
+    <style>
+        @@media print {
+            .no-print {
+                display: none;
+            }
+            .card {
+                border: 1px solid #000 !important;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+}
+

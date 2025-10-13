@@ -1,0 +1,67 @@
+@model CETExamApp.Models.TestAllocation
+@{
+    ViewData["Title"] = "Remove Test Allocation";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="bi bi-trash"></i> Remove Test Allocation</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <strong>Warning!</strong> Are you sure you want to remove this test allocation?
+                </div>
+                
+                <dl class="row">
+                    <dt class="col-sm-4">Test</dt>
+                    <dd class="col-sm-8">@Model.Test?.Title</dd>
+
+                    <dt class="col-sm-4">Subject</dt>
+                    <dd class="col-sm-8">@Model.Test?.Subject?.Name</dd>
+
+                    <dt class="col-sm-4">Student</dt>
+                    <dd class="col-sm-8">@Model.Student?.FirstName @Model.Student?.LastName (@Model.Student?.Email)</dd>
+
+                    <dt class="col-sm-4">Group</dt>
+                    <dd class="col-sm-8">@(Model.Student?.Group?.Name ?? "Not assigned")</dd>
+
+                    <dt class="col-sm-4">Allocated Date</dt>
+                    <dd class="col-sm-8">@Model.AllocatedDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+
+                    <dt class="col-sm-4">Scheduled Start</dt>
+                    <dd class="col-sm-8">@(Model.ScheduledStartTime?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Not set")</dd>
+
+                    <dt class="col-sm-4">Scheduled End</dt>
+                    <dd class="col-sm-8">@(Model.ScheduledEndTime?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Not set")</dd>
+
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.IsCompleted)
+                        {
+                            <span class="badge bg-success">Completed</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning">Pending</span>
+                        }
+                    </dd>
+                </dl>
+                
+                <form asp-action="Delete" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Remove Allocation
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+

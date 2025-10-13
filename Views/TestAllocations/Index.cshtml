@@ -1,0 +1,107 @@
+@model IEnumerable<CETExamApp.Models.TestAllocation>
+@{
+    ViewData["Title"] = "Test Allocations";
+    var testId = ViewData["TestId"];
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-person-check"></i> Test Allocations</h2>
+    <div>
+        <a asp-action="Allocate" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Allocate Test
+        </a>
+        @if (testId != null && Model.Any())
+        {
+            <a asp-action="RescheduleMultiple" asp-route-testId="@testId" class="btn btn-warning">
+                <i class="bi bi-calendar-event"></i> Reschedule All
+            </a>
+        }
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card shadow mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-10">
+                <label class="form-label">Filter by Test</label>
+                <select name="testId" class="form-select" asp-items="ViewBag.TestId">
+                    <option value="">All Tests</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Test</th>
+                        <th>Subject</th>
+                        <th>Student</th>
+                        <th>Allocated Date</th>
+                        <th>Scheduled Start</th>
+                        <th>Scheduled End</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.Test?.Title</td>
+                            <td>@item.Test?.Subject?.Name</td>
+                            <td>@item.Student?.FirstName @item.Student?.LastName</td>
+                            <td>@item.AllocatedDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@(item.ScheduledStartTime?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Not Set")</td>
+                            <td>@(item.ScheduledEndTime?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Not Set")</td>
+                            <td>
+                                @if (item.IsCompleted)
+                                {
+                                    <span class="badge bg-success">Completed</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning">Pending</span>
+                                }
+                            </td>
+                            <td>
+                                <a asp-action="Reschedule" asp-route-id="@item.Id" class="btn btn-sm btn-warning" title="Reschedule">
+                                    <i class="bi bi-calendar-event"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger" title="Remove">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+

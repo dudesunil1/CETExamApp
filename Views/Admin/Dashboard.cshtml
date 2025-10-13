@@ -1,0 +1,186 @@
+@model List<(ApplicationUser User, string Role)>
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 fade-in">
+    <div>
+        <h1 class="fw-bold"><i class="bi bi-speedometer2 text-gradient"></i> Admin Dashboard</h1>
+        <p class="text-muted mb-0">Welcome to the Central Exam Testing Administration Panel</p>
+    </div>
+</div>
+
+<div class="row mb-4 fade-in">
+    <div class="col-md-3 mb-3">
+        <div class="card dashboard-card card-gradient-primary text-white shadow-custom-lg">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-white-50 mb-2">Total Users</h6>
+                        <h2 class="mb-0 fw-bold">@Model.Count</h2>
+                        <small class="text-white-50">Registered</small>
+                    </div>
+                    <i class="bi bi-people stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card dashboard-card card-gradient-success text-white shadow-custom-lg">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-white-50 mb-2">Students</h6>
+                        <h2 class="mb-0 fw-bold">@Model.Count(u => u.Role == "Student")</h2>
+                        <small class="text-white-50">Active Learners</small>
+                    </div>
+                    <i class="bi bi-person-badge stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card dashboard-card card-gradient-info text-white shadow-custom-lg">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-white-50 mb-2">Admins</h6>
+                        <h2 class="mb-0 fw-bold">@Model.Count(u => u.Role == "Admin")</h2>
+                        <small class="text-white-50">Administrators</small>
+                    </div>
+                    <i class="bi bi-shield-check stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card dashboard-card card-gradient-warning shadow-custom-lg">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-dark mb-2 opacity-75">Active Users</h6>
+                        <h2 class="mb-0 fw-bold">@Model.Count(u => u.User.IsActive)</h2>
+                        <small class="text-dark opacity-75">Currently Active</small>
+                    </div>
+                    <i class="bi bi-check-circle stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="mb-4 fw-bold slide-up"><i class="bi bi-grid text-primary"></i> Administration Sections</h3>
+    </div>
+
+    <!-- Student Management -->
+    <div class="col-md-4 mb-4">
+        <div class="card section-card h-100 shadow-custom">
+            <div class="card-body text-center p-4">
+                <i class="bi bi-people display-3 text-primary icon-animated mb-3"></i>
+                <h5 class="card-title mt-3 fw-bold">Student Registration</h5>
+                <p class="card-text text-muted">Register and manage students with comprehensive profiles</p>
+                <a asp-controller="StudentsManagement" asp-action="Index" class="btn btn-primary btn-lg mt-2">
+                    <i class="bi bi-arrow-right-circle"></i> Manage Students
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Master Data -->
+    <div class="col-md-4 mb-4">
+        <div class="card section-card h-100 shadow-custom">
+            <div class="card-body text-center p-4">
+                <i class="bi bi-database display-3 text-success icon-animated mb-3"></i>
+                <h5 class="card-title mt-3 fw-bold">Master Data</h5>
+                <p class="card-text text-muted mb-3">Manage subjects, classes, groups, and topics</p>
+                <div class="d-grid gap-2">
+                    <a asp-controller="Subjects" asp-action="Index" class="btn btn-outline-success">
+                        <i class="bi bi-book"></i> Subjects
+                    </a>
+                    <a asp-controller="Classes" asp-action="Index" class="btn btn-outline-success">
+                        <i class="bi bi-building"></i> Classes
+                    </a>
+                    <a asp-controller="Groups" asp-action="Index" class="btn btn-outline-success">
+                        <i class="bi bi-people"></i> Groups
+                    </a>
+                    <a asp-controller="Topics" asp-action="Index" class="btn btn-outline-success">
+                        <i class="bi bi-bookmark"></i> Topics
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Question Bank -->
+    <div class="col-md-4 mb-4">
+        <div class="card section-card h-100 shadow-custom">
+            <div class="card-body text-center p-4">
+                <i class="bi bi-question-circle display-3 text-info icon-animated mb-3"></i>
+                <h5 class="card-title mt-3 fw-bold">Question Bank</h5>
+                <p class="card-text text-muted">Create and manage questions with images & equations</p>
+                <a asp-controller="Questions" asp-action="Index" class="btn btn-info btn-lg mt-2">
+                    <i class="bi bi-arrow-right-circle"></i> Question Bank
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Management -->
+    <div class="col-md-4 mb-4">
+        <div class="card section-card h-100 shadow-custom">
+            <div class="card-body text-center p-4">
+                <i class="bi bi-file-earmark-text display-3 text-warning icon-animated mb-3"></i>
+                <h5 class="card-title mt-3 fw-bold">Test Creation</h5>
+                <p class="card-text text-muted">Design comprehensive tests with flexible settings</p>
+                <a asp-controller="Tests" asp-action="Index" class="btn btn-warning btn-lg mt-2">
+                    <i class="bi bi-arrow-right-circle"></i> Manage Tests
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Allocation -->
+    <div class="col-md-4 mb-4">
+        <div class="card section-card h-100 shadow-custom">
+            <div class="card-body text-center p-4">
+                <i class="bi bi-person-check display-3 text-primary icon-animated mb-3"></i>
+                <h5 class="card-title mt-3 fw-bold">Test Allocation</h5>
+                <p class="card-text text-muted">Allocate tests and schedule assessments</p>
+                <a asp-controller="TestAllocations" asp-action="Index" class="btn btn-primary btn-lg mt-2">
+                    <i class="bi bi-arrow-right-circle"></i> Allocations
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results & Reports -->
+    <div class="col-md-4 mb-4">
+        <div class="card section-card h-100 shadow-custom">
+            <div class="card-body text-center p-4">
+                <i class="bi bi-graph-up display-3 text-success icon-animated mb-3"></i>
+                <h5 class="card-title mt-3 fw-bold">Results & Reports</h5>
+                <p class="card-text text-muted">Analyze performance with comprehensive reports</p>
+                <a asp-controller="Results" asp-action="Index" class="btn btn-success btn-lg mt-2">
+                    <i class="bi bi-arrow-right-circle"></i> View Results
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exam Center Config -->
+    <div class="col-md-4 mb-4">
+        <div class="card section-card h-100 shadow-custom">
+            <div class="card-body text-center p-4">
+                <i class="bi bi-gear display-3 text-danger icon-animated mb-3"></i>
+                <h5 class="card-title mt-3 fw-bold">Exam Center Config</h5>
+                <p class="card-text text-muted">Customize branding, logo, and center details</p>
+                <a asp-controller="ExamCenterConfig" asp-action="Index" class="btn btn-danger btn-lg mt-2">
+                    <i class="bi bi-arrow-right-circle"></i> Configuration
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+

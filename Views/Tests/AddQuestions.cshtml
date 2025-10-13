@@ -1,0 +1,236 @@
+@using CETExamApp.Models
+@{
+    ViewData["Title"] = "Add Questions to Test";
+    var test = ViewBag.Test as Test;
+    var availableQuestions = ViewBag.AvailableQuestions as List<Question>;
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-list-check"></i> Add Questions to Test: @test?.Title</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Subject:</strong> @test?.Subject?.Name
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Group:</strong> @(test?.Group?.Name ?? "All Groups")
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Duration:</strong> @test?.DurationMinutes min
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-4">
+                        <strong>Questions Added:</strong> @(test?.TestQuestions?.Count ?? 0)
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Total Marks:</strong> @test?.TotalMarks
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Status:</strong> 
+                        @switch (test?.Status)
+                        {
+                            case TestStatus.Draft:
+                                <span class="badge bg-secondary">Draft</span>
+                                break;
+                            case TestStatus.Published:
+                                <span class="badge bg-success">Published</span>
+                                break;
+                            default:
+                                <span class="badge bg-info">@test?.Status</span>
+                                break;
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row">
+    <!-- Added Questions Panel -->
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-check2-square"></i> Questions in Test (@(test?.TestQuestions?.Count ?? 0))</h5>
+            </div>
+            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                @if (test?.TestQuestions?.Any() == true)
+                {
+                    <div class="list-group">
+                        @foreach (var tq in test.TestQuestions.OrderBy(q => q.QuestionOrder))
+                        {
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <strong>Q@(tq.QuestionOrder).</strong>
+                                        @if (tq.Question?.QuestionText?.Length > 60)
+                                        {
+                                            @(tq.Question.QuestionText.Substring(0, 60) + "...")
+                                        }
+                                        else
+                                        {
+                                            @tq.Question?.QuestionText
+                                        }
+                                        <br/>
+                                        <small class="text-muted">
+                                            <i class="bi bi-bookmark"></i> @tq.Question?.Topic?.Name |
+                                            <i class="bi bi-star"></i> @tq.Marks marks
+                                        </small>
+                                    </div>
+                                    <form asp-action="RemoveQuestionFromTest" method="post" class="d-inline">
+                                        <input type="hidden" name="testId" value="@test.Id" />
+                                        <input type="hidden" name="questionId" value="@tq.QuestionId" />
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Remove this question?');">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> No questions added yet. Select questions from the right panel.
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <div class="mt-3">
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Test List
+            </a>
+            <a asp-controller="TestAllocations" asp-action="Allocate" asp-route-testId="@test?.Id" class="btn btn-primary">
+                <i class="bi bi-person-check"></i> Allocate to Students
+            </a>
+        </div>
+    </div>
+
+    <!-- Available Questions Panel -->
+    <div class="col-md-7">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-search"></i> Select Questions by Topic</h5>
+            </div>
+            <div class="card-body">
+                <!-- Topic Filter -->
+                <form method="get" class="mb-3">
+                    <div class="row g-2">
+                        <div class="col-md-9">
+                            <select name="topicId" class="form-select" asp-items="ViewBag.Topics">
+                                <option value="">All Topics (Subject: @test?.Subject?.Name)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-funnel"></i> Filter
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <div style="max-height: 500px; overflow-y: auto;">
+                    @if (availableQuestions?.Any() == true)
+                    {
+                        foreach (var question in availableQuestions)
+                        {
+                            <div class="card mb-2">
+                                <div class="card-body p-3">
+                                    <h6 class="card-title">
+                                        @if (question.QuestionText.Length > 100)
+                                        {
+                                            @(question.QuestionText.Substring(0, 100) + "...")
+                                        }
+                                        else
+                                        {
+                                            @question.QuestionText
+                                        }
+                                    </h6>
+                                    <small class="text-muted">
+                                        <span class="badge bg-info">@question.Topic?.Name</span>
+                                        @switch (question.QuestionType)
+                                        {
+                                            case QuestionType.MCQ:
+                                                <span class="badge bg-primary">MCQ</span>
+                                                break;
+                                            case QuestionType.TrueFalse:
+                                                <span class="badge bg-success">T/F</span>
+                                                break;
+                                            case QuestionType.MCQWithAllOfAbove:
+                                                <span class="badge bg-warning">MCQ (All)</span>
+                                                break;
+                                        }
+                                        @switch (question.DifficultyLevel)
+                                        {
+                                            case DifficultyLevel.Easy:
+                                                <span class="badge bg-success">Easy</span>
+                                                break;
+                                            case DifficultyLevel.Medium:
+                                                <span class="badge bg-warning">Medium</span>
+                                                break;
+                                            case DifficultyLevel.Hard:
+                                                <span class="badge bg-danger">Hard</span>
+                                                break;
+                                        }
+                                        Default: @question.Marks marks
+                                    </small>
+                                    
+                                    <form asp-action="AddQuestionToTest" method="post" class="mt-2">
+                                        <input type="hidden" name="testId" value="@test?.Id" />
+                                        <input type="hidden" name="questionId" value="@question.Id" />
+                                        <div class="row g-2">
+                                            <div class="col-md-6">
+                                                <input type="number" name="marks" class="form-control form-control-sm" 
+                                                       placeholder="Marks" value="@question.Marks" min="1" max="100" required />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <button type="submit" class="btn btn-sm btn-success w-100">
+                                                    <i class="bi bi-plus-circle"></i> Add to Test
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> No questions available for this subject/topic. Create questions first.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+}
+

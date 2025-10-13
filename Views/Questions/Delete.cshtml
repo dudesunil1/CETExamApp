@@ -1,0 +1,84 @@
+@model CETExamApp.Models.Question
+@{
+    ViewData["Title"] = "Delete Question";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="bi bi-trash"></i> Delete Question</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <strong>Warning!</strong> Are you sure you want to delete this question? All associated images will also be deleted.
+                </div>
+                
+                <dl class="row">
+                    <dt class="col-sm-3">Topic</dt>
+                    <dd class="col-sm-9">@Model.Topic?.Name (@Model.Topic?.Subject?.Name - @Model.Topic?.Class?.Name)</dd>
+
+                    <dt class="col-sm-3">Type</dt>
+                    <dd class="col-sm-9">
+                        @switch (Model.QuestionType)
+                        {
+                            case CETExamApp.Models.QuestionType.MCQ:
+                                <span class="badge bg-primary">MCQ</span>
+                                break;
+                            case CETExamApp.Models.QuestionType.TrueFalse:
+                                <span class="badge bg-success">True/False</span>
+                                break;
+                            case CETExamApp.Models.QuestionType.MCQWithAllOfAbove:
+                                <span class="badge bg-warning">MCQ (All of the above)</span>
+                                break;
+                        }
+                    </dd>
+
+                    <dt class="col-sm-3">Question</dt>
+                    <dd class="col-sm-9">
+                        @Model.QuestionText
+                        @if (!string.IsNullOrEmpty(Model.QuestionImagePath))
+                        {
+                            <br /><img src="@Model.QuestionImagePath" alt="Question" class="mt-2" style="max-height: 100px;" />
+                        }
+                    </dd>
+
+                    <dt class="col-sm-3">Difficulty</dt>
+                    <dd class="col-sm-9">
+                        @switch (Model.DifficultyLevel)
+                        {
+                            case CETExamApp.Models.DifficultyLevel.Easy:
+                                <span class="badge bg-success">Easy</span>
+                                break;
+                            case CETExamApp.Models.DifficultyLevel.Medium:
+                                <span class="badge bg-warning">Medium</span>
+                                break;
+                            case CETExamApp.Models.DifficultyLevel.Hard:
+                                <span class="badge bg-danger">Hard</span>
+                                break;
+                        }
+                    </dd>
+
+                    <dt class="col-sm-3">Marks</dt>
+                    <dd class="col-sm-9">@Model.Marks</dd>
+
+                    <dt class="col-sm-3">Correct Answer</dt>
+                    <dd class="col-sm-9"><span class="badge bg-success">@Model.CorrectAnswer</span></dd>
+                </dl>
+                
+                <form asp-action="Delete" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Delete Question
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+

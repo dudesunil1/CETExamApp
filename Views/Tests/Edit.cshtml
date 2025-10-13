@@ -1,0 +1,159 @@
+@model CETExamApp.Models.Test
+@{
+    ViewData["Title"] = "Edit Test";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-white">
+                <h4 class="mb-0"><i class="bi bi-pencil"></i> Edit Test</h4>
+            </div>
+            <div class="card-body">
+                <form asp-action="Edit" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="CreatedDate" />
+                    <input type="hidden" asp-for="CreatedBy" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    
+                    <h5 class="mb-3 text-primary"><i class="bi bi-info-circle"></i> Basic Information</h5>
+                    
+                    <div class="form-floating mb-3">
+                        <input asp-for="Title" class="form-control" placeholder="Test Name" />
+                        <label asp-for="Title">Test Name</label>
+                        <span asp-validation-for="Title" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <textarea asp-for="Description" class="form-control" placeholder="Description" style="height: 80px"></textarea>
+                        <label asp-for="Description">Description</label>
+                    </div>
+
+                    <h5 class="mb-3 text-primary"><i class="bi bi-bookmark"></i> Academic Assignment</h5>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <select asp-for="SubjectId" class="form-select" asp-items="ViewBag.SubjectId">
+                                    <option value="">-- Select Subject --</option>
+                                </select>
+                                <label asp-for="SubjectId">Subject</label>
+                                <span asp-validation-for="SubjectId" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <select asp-for="ClassId" class="form-select" asp-items="ViewBag.ClassId">
+                                    <option value="">-- Select Class --</option>
+                                </select>
+                                <label asp-for="ClassId">Class</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <select asp-for="GroupId" class="form-select" asp-items="ViewBag.GroupId">
+                                    <option value="">-- Select Group --</option>
+                                </select>
+                                <label asp-for="GroupId">Group</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 text-primary"><i class="bi bi-clock"></i> Test Schedule & Duration</h5>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="StartDateTime" class="form-label">Start Date & Time</label>
+                                <input asp-for="StartDateTime" type="datetime-local" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="EndDateTime" class="form-label">End Date & Time</label>
+                                <input asp-for="EndDateTime" type="datetime-local" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input asp-for="DurationMinutes" class="form-control" type="number" min="1" max="1440" />
+                                <label asp-for="DurationMinutes">Duration (Minutes)</label>
+                                <span asp-validation-for="DurationMinutes" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-floating mb-3">
+                                <input asp-for="TotalMarks" class="form-control" type="number" min="1" />
+                                <label asp-for="TotalMarks">Total Marks</label>
+                                <span asp-validation-for="TotalMarks" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-floating mb-3">
+                                <input asp-for="PassingMarks" class="form-control" type="number" min="0" max="100" />
+                                <label asp-for="PassingMarks">Passing Marks</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 text-primary"><i class="bi bi-sliders"></i> Test Settings</h5>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-check mb-3">
+                                <input asp-for="ShuffleQuestions" class="form-check-input" />
+                                <label asp-for="ShuffleQuestions" class="form-check-label">
+                                    Shuffle Questions Per Student
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check mb-3">
+                                <input asp-for="AllowLateSubmission" class="form-check-input" />
+                                <label asp-for="AllowLateSubmission" class="form-check-label">
+                                    Allow Late Submission
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check mb-3">
+                                <input asp-for="ShowResultsImmediately" class="form-check-input" />
+                                <label asp-for="ShowResultsImmediately" class="form-check-label">
+                                    Show Results Immediately
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <select asp-for="Status" class="form-select">
+                            <option value="0">Draft</option>
+                            <option value="1">Published</option>
+                            <option value="2">In Progress</option>
+                            <option value="3">Completed</option>
+                            <option value="4">Cancelled</option>
+                        </select>
+                        <label asp-for="Status">Test Status</label>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to List
+                        </a>
+                        <button type="submit" class="btn btn-warning btn-lg">
+                            <i class="bi bi-check-circle"></i> Update Test
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+

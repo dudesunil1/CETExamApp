@@ -1,0 +1,101 @@
+@model IEnumerable<CETExamApp.Models.Test>
+@{
+    ViewData["Title"] = "Tests";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-file-earmark-text"></i> Test Management</h2>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Create New Test
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card shadow">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Subject</th>
+                        <th>Class</th>
+                        <th>Duration</th>
+                        <th>Questions</th>
+                        <th>Total Marks</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.Title</td>
+                            <td><span class="badge bg-info">@item.Subject?.Name</span></td>
+                            <td>
+                                @if (item.Group != null)
+                                {
+                                    <span class="badge bg-warning">@item.Group.Name</span>
+                                }
+                                else if (item.Class != null)
+                                {
+                                    <span class="badge bg-secondary">@item.Class.Name</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">All</span>
+                                }
+                            </td>
+                            <td>@item.DurationMinutes min</td>
+                            <td>@(item.TestQuestions?.Count ?? 0)</td>
+                            <td>@item.TotalMarks</td>
+                            <td>
+                                @switch (item.Status)
+                                {
+                                    case CETExamApp.Models.TestStatus.Draft:
+                                        <span class="badge bg-secondary">Draft</span>
+                                        break;
+                                    case CETExamApp.Models.TestStatus.Published:
+                                        <span class="badge bg-success">Published</span>
+                                        break;
+                                    case CETExamApp.Models.TestStatus.InProgress:
+                                        <span class="badge bg-warning">In Progress</span>
+                                        break;
+                                    case CETExamApp.Models.TestStatus.Completed:
+                                        <span class="badge bg-info">Completed</span>
+                                        break;
+                                    case CETExamApp.Models.TestStatus.Cancelled:
+                                        <span class="badge bg-danger">Cancelled</span>
+                                        break;
+                                }
+                            </td>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a asp-action="AddQuestions" asp-route-id="@item.Id" class="btn btn-sm btn-success" title="Manage Questions">
+                                    <i class="bi bi-list-check"></i>
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a asp-controller="TestAllocations" asp-action="Allocate" asp-route-testId="@item.Id" class="btn btn-sm btn-primary" title="Allocate to Students">
+                                    <i class="bi bi-person-check"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,101 @@
+@model IEnumerable<dynamic>
+@{
+    ViewData["Title"] = "Student Management";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-people"></i> Student Management</h2>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Register New Student
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card shadow">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Photo</th>
+                        <th>Name</th>
+                        <th>Class</th>
+                        <th>Group</th>
+                        <th>Mobile No</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.Student.PhotoPath))
+                                {
+                                    <img src="@item.Student.PhotoPath" alt="Photo" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;" />
+                                }
+                                else
+                                {
+                                    <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center text-white" style="width: 40px; height: 40px;">
+                                        <i class="bi bi-person"></i>
+                                    </div>
+                                }
+                            </td>
+                            <td>@item.Student.FirstName @item.Student.LastName</td>
+                            <td>
+                                @if (item.Class != null)
+                                {
+                                    <span class="badge bg-primary">@item.Class.Name</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">No Class</span>
+                                }
+                            </td>
+                            <td>
+                                @if (item.Group != null)
+                                {
+                                    <span class="badge bg-info">@item.Group.Name</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">No Group</span>
+                                }
+                            </td>
+                            <td>@item.Student.MobileNo</td>
+                            <td>@item.Student.Email</td>
+                            <td>
+                                @if (item.Student.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactive</span>
+                                }
+                            </td>
+                            <td>
+                                <a asp-action="Edit" asp-route-id="@item.Student.Id" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@item.Student.Id" class="btn btn-sm btn-danger">
+                                    <i class="bi bi-trash"></i> Delete
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
