@@ -82,7 +82,7 @@ namespace CETExamApp.Controllers
                 var user = new ApplicationUser
                 {
                     UserName = model.FirstName.ToLower() + model.LastName.ToLower(), // Generate username from name
-                    Email = model.Email,
+                    Email = string.IsNullOrWhiteSpace(model.Email) ? null : model.Email,
                     StudentUsername = model.FirstName.ToLower() + model.LastName.ToLower(),
                     FirstName = model.FirstName,
                     LastName = model.LastName

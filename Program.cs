@@ -32,7 +32,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => {
     options.Lockout.AllowedForNewUsers = true;
     
     // User settings
-    options.User.RequireUniqueEmail = true;
+    options.User.RequireUniqueEmail = false;
 })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();

@@ -59,7 +59,7 @@ namespace CETExamApp.Controllers.Admin
                 var user = new ApplicationUser
                 {
                     UserName = model.Username,
-                    Email = model.Email,
+                    Email = string.IsNullOrWhiteSpace(model.Email) ? null : model.Email,
                     StudentUsername = model.Username,
                     FirstName = model.FirstName,
                     LastName = model.LastName,
@@ -67,8 +67,8 @@ namespace CETExamApp.Controllers.Admin
                     GroupId = model.GroupId,
                     PhotoPath = photoPath,
                     MobileNo = model.MobileNo,
-                    ParentsMobileNo = model.ParentsMobileNo,
-                    EmailConfirmed = true,
+                    ParentsMobileNo = string.IsNullOrWhiteSpace(model.ParentsMobileNo) ? null : model.ParentsMobileNo,
+                    EmailConfirmed = !string.IsNullOrWhiteSpace(model.Email),
                     PhoneNumber = model.MobileNo
                 };
 
@@ -145,12 +145,12 @@ namespace CETExamApp.Controllers.Admin
                 student.FirstName = model.FirstName;
                 student.LastName = model.LastName;
                 student.StudentUsername = model.Username;
-                student.Email = model.Email;
+                student.Email = string.IsNullOrWhiteSpace(model.Email) ? null : model.Email;
                 student.UserName = model.Username;
                 student.ClassId = model.ClassId;
                 student.GroupId = model.GroupId;
                 student.MobileNo = model.MobileNo;
-                student.ParentsMobileNo = model.ParentsMobileNo;
+                student.ParentsMobileNo = string.IsNullOrWhiteSpace(model.ParentsMobileNo) ? null : model.ParentsMobileNo;
                 student.PhoneNumber = model.MobileNo;
                 student.IsActive = model.IsActive;
 
