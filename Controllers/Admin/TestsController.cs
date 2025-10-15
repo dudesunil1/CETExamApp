@@ -45,6 +45,13 @@ namespace CETExamApp.Controllers.Admin
             {
                 test.CreatedDate = DateTime.UtcNow;
                 test.CreatedBy = User.Identity?.Name;
+                
+                // Convert local time to UTC for storage
+                if (test.StartDateTime.HasValue)
+                    test.StartDateTime = test.StartDateTime.Value.ToUniversalTime();
+                if (test.EndDateTime.HasValue)
+                    test.EndDateTime = test.EndDateTime.Value.ToUniversalTime();
+                
                 _context.Tests.Add(test);
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Test created successfully! Now add questions to the test.";
@@ -86,6 +93,12 @@ namespace CETExamApp.Controllers.Admin
             {
                 try
                 {
+                    // Convert local time to UTC for storage
+                    if (test.StartDateTime.HasValue)
+                        test.StartDateTime = test.StartDateTime.Value.ToUniversalTime();
+                    if (test.EndDateTime.HasValue)
+                        test.EndDateTime = test.EndDateTime.Value.ToUniversalTime();
+                    
                     _context.Update(test);
                     await _context.SaveChangesAsync();
                     TempData["Success"] = "Test updated successfully!";

@@ -54,11 +54,7 @@
                     <div class="border rounded p-3 bg-light">
                         @if (!string.IsNullOrEmpty(Model.QuestionText))
                         {
-                            <p class="question-text">@Model.QuestionText</p>
-                        }
-                        @if (!string.IsNullOrEmpty(Model.QuestionImagePath))
-                        {
-                            <img src="@Model.QuestionImagePath" alt="Question Image" class="img-fluid mt-2" style="max-width: 500px;" />
+                            <div class="question-text">@Html.Raw(Model.QuestionText)</div>
                         }
                     </div>
                 </div>
@@ -69,33 +65,21 @@
                         <h5><i class="bi bi-list-check"></i> Options:</h5>
                         <div class="list-group">
                             <div class="list-group-item @(Model.CorrectAnswer == "A" ? "list-group-item-success" : "")">
-                                <strong>A.</strong> @Model.OptionA
-                                @if (!string.IsNullOrEmpty(Model.OptionAImagePath))
-                                {
-                                    <br /><img src="@Model.OptionAImagePath" alt="Option A" class="img-fluid mt-2" style="max-width: 300px;" />
-                                }
+                                <strong>A.</strong> @Html.Raw(Model.OptionA)
                                 @if (Model.CorrectAnswer == "A")
                                 {
                                     <span class="badge bg-success float-end">Correct Answer</span>
                                 }
                             </div>
                             <div class="list-group-item @(Model.CorrectAnswer == "B" ? "list-group-item-success" : "")">
-                                <strong>B.</strong> @Model.OptionB
-                                @if (!string.IsNullOrEmpty(Model.OptionBImagePath))
-                                {
-                                    <br /><img src="@Model.OptionBImagePath" alt="Option B" class="img-fluid mt-2" style="max-width: 300px;" />
-                                }
+                                <strong>B.</strong> @Html.Raw(Model.OptionB)
                                 @if (Model.CorrectAnswer == "B")
                                 {
                                     <span class="badge bg-success float-end">Correct Answer</span>
                                 }
                             </div>
                             <div class="list-group-item @(Model.CorrectAnswer == "C" ? "list-group-item-success" : "")">
-                                <strong>C.</strong> @Model.OptionC
-                                @if (!string.IsNullOrEmpty(Model.OptionCImagePath))
-                                {
-                                    <br /><img src="@Model.OptionCImagePath" alt="Option C" class="img-fluid mt-2" style="max-width: 300px;" />
-                                }
+                                <strong>C.</strong> @Html.Raw(Model.OptionC)
                                 @if (Model.CorrectAnswer == "C")
                                 {
                                     <span class="badge bg-success float-end">Correct Answer</span>
@@ -109,11 +93,7 @@
                                 }
                                 else
                                 {
-                                    @Model.OptionD
-                                }
-                                @if (!string.IsNullOrEmpty(Model.OptionDImagePath))
-                                {
-                                    <br /><img src="@Model.OptionDImagePath" alt="Option D" class="img-fluid mt-2" style="max-width: 300px;" />
+                                    @Html.Raw(Model.OptionD)
                                 }
                                 @if (Model.CorrectAnswer == "D")
                                 {
@@ -138,11 +118,7 @@
                     <div class="mb-4">
                         <h5><i class="bi bi-info-circle"></i> Explanation:</h5>
                         <div class="alert alert-info">
-                            @Model.Explanation
-                            @if (!string.IsNullOrEmpty(Model.ExplanationImagePath))
-                            {
-                                <br /><img src="@Model.ExplanationImagePath" alt="Explanation" class="img-fluid mt-2" style="max-width: 400px;" />
-                            }
+                            @Html.Raw(Model.Explanation)
                         </div>
                     </div>
                 }

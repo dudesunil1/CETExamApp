@@ -20,23 +20,44 @@
 
 <div class="card shadow mb-3">
     <div class="card-body">
-        <form method="get" class="row g-3">
-            <div class="col-md-5">
-                <label class="form-label">Filter by Topic</label>
-                <select name="topicId" class="form-select" asp-items="ViewBag.TopicId">
+        <h5 class="card-title mb-3"><i class="bi bi-funnel"></i> Filter Questions</h5>
+        <form method="get" id="filterForm" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Class</label>
+                <select name="classId" id="classFilter" class="form-select" asp-items="ViewBag.ClassId">
+                    <option value="">All Classes</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Subject</label>
+                <select name="subjectId" id="subjectFilter" class="form-select" asp-items="ViewBag.SubjectId">
+                    <option value="">All Subjects</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Topic</label>
+                <select name="topicId" id="topicFilter" class="form-select" asp-items="ViewBag.TopicId">
                     <option value="">All Topics</option>
                 </select>
             </div>
-            <div class="col-md-5">
-                <label class="form-label">Filter by Difficulty</label>
+            <div class="col-md-3">
+                <label class="form-label">Difficulty</label>
                 <select name="difficultyLevel" class="form-select" asp-items="ViewBag.DifficultyLevel">
                     <option value="">All Levels</option>
                 </select>
             </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-funnel"></i> Filter
-                </button>
+            <div class="col-12">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel"></i> Apply Filters
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="clearFilters()">
+                        <i class="bi bi-arrow-clockwise"></i> Clear Filters
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="loadQuestions()">
+                        <i class="bi bi-arrow-repeat"></i> Refresh
+                    </button>
+                </div>
             </div>
         </form>
     </div>
@@ -50,8 +71,9 @@
                     <tr>
                         <th>Question</th>
                         <th>Type</th>
-                        <th>Topic</th>
+                        <th>Class</th>
                         <th>Subject</th>
+                        <th>Topic</th>
                         <th>Difficulty</th>
                         <th>Marks</th>
                         <th>Status</th>
@@ -63,17 +85,17 @@
                     {
                         <tr>
                             <td>
-                                @if (!string.IsNullOrEmpty(item.QuestionImagePath))
-                                {
-                                    <img src="@item.QuestionImagePath" alt="Q" class="me-2" style="height: 30px;" />
-                                }
-                                @if (item.QuestionText.Length > 50)
-                                {
-                                    @(item.QuestionText.Substring(0, 50) + "...")
-                                }
-                                else
-                                {
-                                    @item.QuestionText
+                                @{
+                                    // Strip HTML tags for preview
+                                    var plainText = System.Text.RegularExpressions.Regex.Replace(item.QuestionText ?? "", "<.*?>", string.Empty);
+                                    if (plainText.Length > 80)
+                                    {
+                                        @(plainText.Substring(0, 80) + "...")
+                                    }
+                                    else
+                                    {
+                                        @plainText
+                                    }
                                 }
                             </td>
                             <td>
@@ -90,8 +112,9 @@
                                         break;
                                 }
                             </td>
-                            <td>@item.Topic?.Name</td>
+                            <td>@item.Topic?.Class?.Name</td>
                             <td>@item.Topic?.Subject?.Name</td>
+                            <td>@item.Topic?.Name</td>
                             <td>
                                 @switch (item.DifficultyLevel)
                                 {
@@ -135,4 +158,143 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Get selected values from ViewBag
+            var selectedClassId = @(ViewBag.SelectedClassId ?? 0);
+            var selectedSubjectId = @(ViewBag.SelectedSubjectId ?? 0);
+            var selectedTopicId = @(ViewBag.SelectedTopicId ?? 0);
+            var selectedDifficultyLevel = @(ViewBag.SelectedDifficultyLevel ?? 0);
+
+            // Set selected values if they exist
+            if (selectedClassId > 0) {
+                $('#classFilter').val(selectedClassId);
+                loadSubjects(selectedClassId, selectedSubjectId);
+            }
+            if (selectedSubjectId > 0) {
+                $('#subjectFilter').val(selectedSubjectId);
+                if (selectedClassId > 0) {
+                    loadTopics(selectedClassId, selectedSubjectId, selectedTopicId);
+                }
+            }
+            if (selectedTopicId > 0) {
+                $('#topicFilter').val(selectedTopicId);
+            }
+            if (selectedDifficultyLevel > 0) {
+                $('select[name="difficultyLevel"]').val(selectedDifficultyLevel);
+            }
+
+            // Class change event
+            $('#classFilter').change(function() {
+                var classId = $(this).val();
+                $('#subjectFilter').html('<option value="">All Subjects</option>');
+                $('#topicFilter').html('<option value="">All Topics</option>');
+                
+                if (classId) {
+                    loadSubjects(classId);
+                }
+            });
+
+            // Subject change event
+            $('#subjectFilter').change(function() {
+                var classId = $('#classFilter').val();
+                var subjectId = $(this).val();
+                $('#topicFilter').html('<option value="">All Topics</option>');
+                
+                if (classId && subjectId) {
+                    loadTopics(classId, subjectId);
+                }
+            });
+        });
+
+        function loadSubjects(classId, selectSubjectId) {
+            $.ajax({
+                url: '@Url.Action("GetSubjectsByClass", "Questions")',
+                type: 'GET',
+                data: { classId: classId },
+                success: function(data) {
+                    var subjectDropdown = $('#subjectFilter');
+                    subjectDropdown.html('<option value="">All Subjects</option>');
+                    
+                    if (data && data.length > 0) {
+                        $.each(data, function(i, subject) {
+                            subjectDropdown.append($('<option></option>')
+                                .attr('value', subject.id)
+                                .text(subject.name));
+                        });
+                    }
+
+                    // Select the subject if provided
+                    if (selectSubjectId > 0) {
+                        subjectDropdown.val(selectSubjectId);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading subjects:', error);
+                    showNotification('Error loading subjects: ' + error, 'error');
+                }
+            });
+        }
+
+        function loadTopics(classId, subjectId, selectTopicId) {
+            $.ajax({
+                url: '@Url.Action("GetTopicsByClassAndSubject", "Questions")',
+                type: 'GET',
+                data: { classId: classId, subjectId: subjectId },
+                success: function(data) {
+                    var topicDropdown = $('#topicFilter');
+                    topicDropdown.html('<option value="">All Topics</option>');
+                    
+                    if (data && data.length > 0) {
+                        $.each(data, function(i, topic) {
+                            topicDropdown.append($('<option></option>')
+                                .attr('value', topic.id)
+                                .text(topic.name));
+                        });
+                    } else {
+                        topicDropdown.append('<option value="">No topics found</option>');
+                    }
+
+                    // Select the topic if provided
+                    if (selectTopicId > 0) {
+                        topicDropdown.val(selectTopicId);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading topics:', error);
+                    showNotification('Error loading topics: ' + error, 'error');
+                }
+            });
+        }
+
+        function clearFilters() {
+            $('#filterForm')[0].reset();
+            $('#subjectFilter').html('<option value="">All Subjects</option>');
+            $('#topicFilter').html('<option value="">All Topics</option>');
+            window.location.href = '@Url.Action("Index", "Questions")';
+        }
+
+        function loadQuestions() {
+            window.location.reload();
+        }
+
+        function showNotification(message, type) {
+            // Create a simple notification
+            var alertClass = type === 'error' ? 'alert-danger' : 'alert-info';
+            var notification = $('<div class="alert ' + alertClass + ' alert-dismissible fade show" role="alert">' +
+                message +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                '</div>');
+            
+            $('body').prepend(notification);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(function() {
+                notification.alert('close');
+            }, 5000);
+        }
+    </script>
+}
 

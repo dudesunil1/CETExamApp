@@ -202,8 +202,7 @@
                 </div>
                 <h5 class="mb-3">Question ${index + 1}:</h5>
                 <div class="mb-4">
-                    <p style="white-space: pre-wrap;">${q.questionText || ''}</p>
-                    ${q.questionImagePath ? `<img src="${q.questionImagePath}" class="img-fluid mt-2" style="max-width: 600px;" alt="Question" />` : ''}
+                    <div>${q.questionText || ''}</div>
                 </div>
             `;
             
@@ -226,8 +225,7 @@
                                        ${q.answer === opt.label ? 'checked' : ''}
                                        onchange="saveAnswer()">
                                 <label class="form-check-label w-100" for="option_${opt.label}">
-                                    <strong>${opt.label}.</strong> ${opt.text}
-                                    ${opt.image ? `<br/><img src="${opt.image}" class="img-fluid mt-2" style="max-width: 300px;" alt="Option ${opt.label}" />` : ''}
+                                    <strong>${opt.label}.</strong> <span>${opt.text}</span>
                                 </label>
                             </div>
                         `;

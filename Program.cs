@@ -44,6 +44,9 @@ builder.Services.Configure<TenantSettings>(
 // Add tenant service
 builder.Services.AddScoped<ITenantService, TenantService>();
 
+// Add TinyMCE service
+builder.Services.AddScoped<ITinyMceService, TinyMceService>();
+
 // Configure application cookie (SECURE)
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -121,14 +124,18 @@ app.Use(async (context, next) =>
     // Referrer Policy
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
     
-    // Content Security Policy (basic)
-    context.Response.Headers["Content-Security-Policy"] = 
-        "default-src 'self'; " +
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://polyfill.io; " +
-        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
-        "img-src 'self' data: https:; " +
-        "font-src 'self' https://cdn.jsdelivr.net; " +
-        "connect-src 'self';";
+    // Content Security Policy (conditional)
+    var enableStrictCSP = builder.Configuration.GetValue<bool>("SecuritySettings:EnableStrictCSP");
+    if (enableStrictCSP)
+    {
+        context.Response.Headers["Content-Security-Policy"] = 
+            "default-src 'self'; " +
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://polyfill.io https://cdn.tiny.cloud; " +
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.tiny.cloud; " +
+            "img-src 'self' data: https:; " +
+            "font-src 'self' https://cdn.jsdelivr.net; " +
+            "connect-src 'self';";
+    }
     
     await next();
 });

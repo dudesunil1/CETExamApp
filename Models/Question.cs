@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace CETExamApp.Models
 {
@@ -21,6 +22,7 @@ namespace CETExamApp.Models
         public int Id { get; set; }
 
         [Required]
+        [ValidateNever]
         public string QuestionText { get; set; } = string.Empty;
 
         // Image path for question (optional)
@@ -36,15 +38,19 @@ namespace CETExamApp.Models
         public int TopicId { get; set; }
 
         // For MCQ questions - 3 options + 1 correct answer = 4 total
+        [ValidateNever]
         public string? OptionA { get; set; }
         public string? OptionAImagePath { get; set; }
         
+        [ValidateNever]
         public string? OptionB { get; set; }
         public string? OptionBImagePath { get; set; }
         
+        [ValidateNever]
         public string? OptionC { get; set; }
         public string? OptionCImagePath { get; set; }
         
+        [ValidateNever]
         public string? OptionD { get; set; }
         public string? OptionDImagePath { get; set; }
 
@@ -52,6 +58,7 @@ namespace CETExamApp.Models
         public string CorrectAnswer { get; set; } = string.Empty;
 
         // Explanation text
+        [ValidateNever]
         public string? Explanation { get; set; }
         
         // Explanation image (optional)

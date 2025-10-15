@@ -113,11 +113,9 @@
                                 <div class="card-body">
                                     <!-- Question -->
                                     <h6>Question:</h6>
-                                    <p style="white-space: pre-wrap;">@tq.Question?.QuestionText</p>
-                                    @if (!string.IsNullOrEmpty(tq.Question?.QuestionImagePath))
-                                    {
-                                        <img src="@tq.Question.QuestionImagePath" alt="Question" class="img-fluid mb-3" style="max-width: 500px;" />
-                                    }
+                                    <div class="mb-3">
+                                        @Html.Raw(tq.Question?.QuestionText)
+                                    </div>
 
                                     <!-- Options -->
                                     @if (tq.Question?.QuestionType != QuestionType.TrueFalse)
@@ -141,11 +139,7 @@
                                                         var isStudentAnswer = studentAnswer?.AnswerText == opt.Label;
                                                         
                                                         <div class="list-group-item @(isCorrectAnswer ? "list-group-item-success" : "")">
-                                                            <strong>@opt.Label.</strong> @opt.Text
-                                                            @if (!string.IsNullOrEmpty(opt.Image))
-                                                            {
-                                                                <br /><img src="@opt.Image" alt="Option @opt.Label" class="img-fluid mt-2" style="max-width: 250px;" />
-                                                            }
+                                                            <strong>@opt.Label.</strong> @Html.Raw(opt.Text)
                                                             @if (isCorrectAnswer)
                                                             {
                                                                 <span class="badge bg-success float-end">Correct Answer</span>
@@ -177,11 +171,7 @@
                                     {
                                         <div class="alert alert-info mt-3">
                                             <h6><i class="bi bi-lightbulb"></i> Explanation:</h6>
-                                            <p style="white-space: pre-wrap;">@tq.Question.Explanation</p>
-                                            @if (!string.IsNullOrEmpty(tq.Question?.ExplanationImagePath))
-                                            {
-                                                <img src="@tq.Question.ExplanationImagePath" alt="Explanation" class="img-fluid mt-2" style="max-width: 400px;" />
-                                            }
+                                            <div>@Html.Raw(tq.Question.Explanation)</div>
                                         </div>
                                     }
                                 </div>

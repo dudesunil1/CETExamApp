@@ -1,5 +1,6 @@
 using CETExamApp.Data;
 using CETExamApp.Models;
+using CETExamApp.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -12,19 +13,32 @@ namespace CETExamApp.Controllers.Admin
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly ITinyMceService _tinyMceService;
+        private readonly ILogger<QuestionsController> _logger;
 
-        public QuestionsController(ApplicationDbContext context, IWebHostEnvironment environment)
+        public QuestionsController(ApplicationDbContext context, IWebHostEnvironment environment, ITinyMceService tinyMceService, ILogger<QuestionsController> logger)
         {
             _context = context;
             _environment = environment;
+            _tinyMceService = tinyMceService;
+            _logger = logger;
         }
 
-        public async Task<IActionResult> Index(int? topicId, int? difficultyLevel)
+        public async Task<IActionResult> Index(int? classId, int? subjectId, int? topicId, int? difficultyLevel)
         {
             var questionsQuery = _context.Questions
                 .Include(q => q.Topic)
                 .ThenInclude(t => t!.Subject)
+                .Include(q => q.Topic)
+                .ThenInclude(t => t!.Class)
                 .AsQueryable();
+
+            // Apply filters
+            if (classId.HasValue)
+                questionsQuery = questionsQuery.Where(q => q.Topic.ClassId == classId.Value);
+
+            if (subjectId.HasValue)
+                questionsQuery = questionsQuery.Where(q => q.Topic.SubjectId == subjectId.Value);
 
             if (topicId.HasValue)
                 questionsQuery = questionsQuery.Where(q => q.TopicId == topicId.Value);
@@ -36,16 +50,75 @@ namespace CETExamApp.Controllers.Admin
                 .OrderByDescending(q => q.CreatedDate)
                 .ToListAsync();
 
+            // Populate filter dropdowns
+            ViewData["ClassId"] = new SelectList(await _context.Classes.Where(c => c.IsActive).ToListAsync(), "Id", "Name", classId);
+            ViewData["SubjectId"] = new SelectList(await _context.Subjects.Where(s => s.IsActive).ToListAsync(), "Id", "Name", subjectId);
             ViewData["TopicId"] = new SelectList(await _context.Topics.Include(t => t.Subject).ToListAsync(), "Id", "Name", topicId);
             ViewData["DifficultyLevel"] = new SelectList(Enum.GetValues(typeof(DifficultyLevel)), difficultyLevel);
+
+            // Store selected values for AJAX
+            ViewBag.SelectedClassId = classId;
+            ViewBag.SelectedSubjectId = subjectId;
+            ViewBag.SelectedTopicId = topicId;
+            ViewBag.SelectedDifficultyLevel = difficultyLevel;
 
             return View(questions);
         }
 
         public async Task<IActionResult> Create()
         {
-            ViewData["TopicId"] = new SelectList(await _context.Topics.Include(t => t.Subject).Where(t => t.IsActive).ToListAsync(), "Id", "Name");
+            ViewData["ClassId"] = new SelectList(await _context.Classes.ToListAsync(), "Id", "Name");
+            ViewData["SubjectId"] = new SelectList(await _context.Subjects.ToListAsync(), "Id", "Name");
+            ViewData["TopicId"] = new SelectList(Enumerable.Empty<SelectListItem>());
+            ViewBag.TinyMceApiKey = await _tinyMceService.GetActiveApiKeyAsync();
+            
+            // Pass selected values from TempData to ViewBag for maintaining selection
+            ViewBag.SelectedClassId = TempData["SelectedClassId"];
+            ViewBag.SelectedSubjectId = TempData["SelectedSubjectId"];
+            ViewBag.SelectedTopicId = TempData["SelectedTopicId"];
+            
             return View();
+        }
+
+        // AJAX endpoint to get subjects by class
+        [HttpGet]
+        public async Task<IActionResult> GetSubjectsByClass(int classId)
+        {
+            try
+            {
+                var subjects = await _context.Topics
+                    .Where(t => t.ClassId == classId && t.IsActive)
+                    .Include(t => t.Subject)
+                    .Where(t => t.Subject!.IsActive)
+                    .Select(t => new { id = t.Subject!.Id, name = t.Subject.Name })
+                    .Distinct()
+                    .ToListAsync();
+                
+                return Json(subjects);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { error = ex.Message });
+            }
+        }
+
+        // AJAX endpoint to get topics by class and subject
+        [HttpGet]
+        public async Task<IActionResult> GetTopicsByClassAndSubject(int classId, int subjectId)
+        {
+            try
+            {
+                var topics = await _context.Topics
+                    .Where(t => t.ClassId == classId && t.SubjectId == subjectId && t.IsActive)
+                    .Select(t => new { id = t.Id, name = t.Name })
+                    .ToListAsync();
+                
+                return Json(topics);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { error = ex.Message });
+            }
         }
 
         [HttpPost]
@@ -79,13 +152,42 @@ namespace CETExamApp.Controllers.Admin
                 if (explanationImage != null && explanationImage.Length > 0)
                     question.ExplanationImagePath = await SaveQuestionImageAsync(explanationImage, "explanations");
 
+                // Process base64 images in question content
+                question.QuestionText = await ProcessBase64ImagesAsync(question.QuestionText);
+                question.OptionA = await ProcessBase64ImagesAsync(question.OptionA);
+                question.OptionB = await ProcessBase64ImagesAsync(question.OptionB);
+                question.OptionC = await ProcessBase64ImagesAsync(question.OptionC);
+                question.OptionD = await ProcessBase64ImagesAsync(question.OptionD);
+                question.Explanation = await ProcessBase64ImagesAsync(question.Explanation);
+
+                // If question type is MCQWithAllOfAbove, set Option D to "All of the Above" and correct answer to D
+                if (question.QuestionType == QuestionType.MCQWithAllOfAbove)
+                {
+                    question.OptionD = "All of the Above";
+                    question.CorrectAnswer = "D";
+                }
+
                 question.CreatedDate = DateTime.UtcNow;
                 question.CreatedBy = User.Identity?.Name;
                 _context.Questions.Add(question);
                 await _context.SaveChangesAsync();
-                TempData["Success"] = "Question created successfully!";
-                return RedirectToAction(nameof(Index));
+                
+                // Get the topic to retrieve ClassId and SubjectId for maintaining selection
+                var topic = await _context.Topics
+                    .Include(t => t.Subject)
+                    .Include(t => t.Class)
+                    .FirstOrDefaultAsync(t => t.Id == question.TopicId);
+                
+                TempData["Success"] = "Question created successfully! You can add another question.";
+                TempData["SelectedClassId"] = topic?.ClassId;
+                TempData["SelectedSubjectId"] = topic?.SubjectId;
+                TempData["SelectedTopicId"] = question.TopicId;
+                
+                return RedirectToAction(nameof(Create));
             }
+            
+            ViewData["ClassId"] = new SelectList(await _context.Classes.ToListAsync(), "Id", "Name");
+            ViewData["SubjectId"] = new SelectList(await _context.Subjects.ToListAsync(), "Id", "Name");
             ViewData["TopicId"] = new SelectList(await _context.Topics.Include(t => t.Subject).Where(t => t.IsActive).ToListAsync(), "Id", "Name", question.TopicId);
             return View(question);
         }
@@ -98,6 +200,7 @@ namespace CETExamApp.Controllers.Admin
             if (question == null) return NotFound();
 
             ViewData["TopicId"] = new SelectList(await _context.Topics.Include(t => t.Subject).Where(t => t.IsActive).ToListAsync(), "Id", "Name", question.TopicId);
+            ViewBag.TinyMceApiKey = await _tinyMceService.GetActiveApiKeyAsync();
             return View(question);
         }
 
@@ -185,6 +288,21 @@ namespace CETExamApp.Controllers.Admin
                     else
                     {
                         question.ExplanationImagePath = existingQuestion.ExplanationImagePath;
+                    }
+
+                    // Process base64 images in question content
+                    question.QuestionText = await ProcessBase64ImagesAsync(question.QuestionText);
+                    question.OptionA = await ProcessBase64ImagesAsync(question.OptionA);
+                    question.OptionB = await ProcessBase64ImagesAsync(question.OptionB);
+                    question.OptionC = await ProcessBase64ImagesAsync(question.OptionC);
+                    question.OptionD = await ProcessBase64ImagesAsync(question.OptionD);
+                    question.Explanation = await ProcessBase64ImagesAsync(question.Explanation);
+
+                    // If question type is MCQWithAllOfAbove, set Option D to "All of the Above" and correct answer to D
+                    if (question.QuestionType == QuestionType.MCQWithAllOfAbove)
+                    {
+                        question.OptionD = "All of the Above";
+                        question.CorrectAnswer = "D";
                     }
 
                     _context.Update(question);
@@ -278,6 +396,52 @@ namespace CETExamApp.Controllers.Admin
             }
 
             return $"/uploads/questions/{subfolder}/{uniqueFileName}";
+        }
+
+        // Helper method to process base64 images in content
+        private async Task<string> ProcessBase64ImagesAsync(string content)
+        {
+            if (string.IsNullOrEmpty(content))
+                return content;
+
+            // Regular expression to find base64 images
+            var base64Pattern = @"data:image/([^;]+);base64,([^""]+)";
+            var matches = System.Text.RegularExpressions.Regex.Matches(content, base64Pattern);
+
+            foreach (System.Text.RegularExpressions.Match match in matches)
+            {
+                try
+                {
+                    var imageType = match.Groups[1].Value;
+                    var base64Data = match.Groups[2].Value;
+                    
+                    // Convert base64 to bytes
+                    var imageBytes = Convert.FromBase64String(base64Data);
+                    
+                    // Generate filename
+                    var fileName = $"{Guid.NewGuid()}.{imageType}";
+                    var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "tinymce");
+                    
+                    if (!Directory.Exists(uploadsFolder))
+                        Directory.CreateDirectory(uploadsFolder);
+                    
+                    var filePath = Path.Combine(uploadsFolder, fileName);
+                    
+                    // Save the image file
+                    await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
+                    
+                    // Replace the base64 URL with the file URL
+                    var fileUrl = $"/uploads/tinymce/{fileName}";
+                    content = content.Replace(match.Value, fileUrl);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error processing base64 image");
+                    // Keep the original base64 if conversion fails
+                }
+            }
+
+            return content;
         }
 
         // Helper method to delete question images

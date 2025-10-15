@@ -1,197 +1,535 @@
 @model CETExamApp.Models.Question
+
 @{
     ViewData["Title"] = "Create Question";
+    var apiKey = ViewBag.TinyMceApiKey as string;
+    var selectedClassId = ViewBag.SelectedClassId as int?;
+    var selectedSubjectId = ViewBag.SelectedSubjectId as int?;
+    var selectedTopicId = ViewBag.SelectedTopicId as int?;
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-12">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0"><i class="bi bi-plus-circle"></i> Create New Question (with Image Support)</h4>
-            </div>
-            <div class="card-body">
-                <form asp-action="Create" method="post" enctype="multipart/form-data">
-                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                    
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle"></i> <strong>Tip:</strong> You can add images to questions, options, and explanations. Math equations can be written using LaTeX format (e.g., $$x^2 + y^2 = z^2$$)
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4"><i class="bi bi-question-circle text-info"></i> Create New Question</h2>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (string.IsNullOrEmpty(apiKey))
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i> <strong>Warning:</strong> No active TinyMCE API key found. 
+            Please <a asp-controller="ApiKeys" asp-action="Create">add an API key</a> to enable the rich text editor.
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form asp-action="Create" method="post" enctype="multipart/form-data" id="questionForm">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <!-- Class, Subject, Topic Selection -->
+                <div class="row mb-4">
+                    <div class="col-md-4 mb-3">
+                        <label for="ClassId" class="form-label">Class <span class="text-danger">*</span></label>
+                        <select id="ClassId" name="ClassId" class="form-select" asp-items="ViewBag.ClassId">
+                            <option value="">-- Select Class --</option>
+                        </select>
                     </div>
 
-                    <h5 class="mb-3 text-primary"><i class="bi bi-gear"></i> Question Settings</h5>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
-                                <select asp-for="TopicId" class="form-select" asp-items="ViewBag.TopicId">
-                                    <option value="">-- Select Topic --</option>
-                                </select>
-                                <label asp-for="TopicId">Topic</label>
-                                <span asp-validation-for="TopicId" class="text-danger"></span>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-floating mb-3">
-                                <select asp-for="QuestionType" class="form-select" id="questionType">
-                                    <option value="0">MCQ</option>
-                                    <option value="1">True/False</option>
-                                    <option value="2">MCQ (All of Above)</option>
-                                </select>
-                                <label asp-for="QuestionType">Question Type</label>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-floating mb-3">
-                                <select asp-for="DifficultyLevel" class="form-select">
-                                    <option value="0">Easy</option>
-                                    <option value="1">Medium</option>
-                                    <option value="2">Hard</option>
-                                </select>
-                                <label asp-for="DifficultyLevel">Difficulty</label>
-                            </div>
-                        </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="SubjectId" class="form-label">Subject <span class="text-danger">*</span></label>
+                        <select id="SubjectId" name="SubjectId" class="form-select" asp-items="ViewBag.SubjectId">
+                            <option value="">-- Select Subject --</option>
+                        </select>
                     </div>
 
-                    <h5 class="mb-3 text-primary"><i class="bi bi-question-circle"></i> Question Content</h5>
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="TopicId" class="form-label">Topic <span class="text-danger">*</span></label>
+                        <select asp-for="TopicId" class="form-select" id="TopicId">
+                            <option value="">-- Select Topic --</option>
+                        </select>
+                        <span asp-validation-for="TopicId" class="text-danger"></span>
+                        <button type="button" class="btn btn-sm btn-info mt-2" onclick="testAjax()">Fill Topic</button>
+                    </div>
+                </div>
 
-                    <div class="form-floating mb-3">
-                        <textarea asp-for="QuestionText" class="form-control" placeholder="Question Text" style="height: 120px"></textarea>
-                        <label asp-for="QuestionText">Question Text (Can include LaTeX equations)</label>
-                        <span asp-validation-for="QuestionText" class="text-danger"></span>
+                <hr />
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="QuestionType" class="form-label"></label>
+                        <select asp-for="QuestionType" class="form-select" id="QuestionType" asp-items="Html.GetEnumSelectList<CETExamApp.Models.QuestionType>()">
+                        </select>
+                        <span asp-validation-for="QuestionType" class="text-danger"></span>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Question Image (Optional)</label>
-                        <input type="file" name="questionImage" class="form-control" accept="image/*" />
-                        <small class="text-muted">Upload image for diagrams, graphs, or complex equations</small>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="DifficultyLevel" class="form-label"></label>
+                        <select asp-for="DifficultyLevel" class="form-select" asp-items="Html.GetEnumSelectList<CETExamApp.Models.DifficultyLevel>()">
+                        </select>
+                        <span asp-validation-for="DifficultyLevel" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="QuestionText" class="form-label"></label>
+                    <textarea asp-for="QuestionText" class="form-control" id="Ques_Question" rows="6"></textarea>
+                    <span asp-validation-for="QuestionText" class="text-danger"></span>
+                    <small class="text-muted">You can insert images and math equations directly in the editor</small>
+                </div>
+
+                <div class="row" id="optionsRow">
+                    <div class="col-md-6 mb-3" id="optionA">
+                        <label asp-for="OptionA" class="form-label"></label>
+                        <textarea asp-for="OptionA" class="form-control" id="Ques_OptionA" rows="3"></textarea>
+                        <span asp-validation-for="OptionA" class="text-danger"></span>
                     </div>
 
-                    <div id="mcqOptions">
-                        <h5 class="mb-3 text-primary"><i class="bi bi-list-check"></i> Answer Options (3 wrong + 1 correct = 4 total)</h5>
-                        
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">Option A</div>
-                            <div class="card-body">
-                                <textarea asp-for="OptionA" class="form-control mb-2" rows="2" placeholder="Option A text"></textarea>
-                                <input type="file" name="optionAImage" class="form-control" accept="image/*" />
-                                <small class="text-muted">Optional image for this option</small>
-                            </div>
-                        </div>
+                    <div class="col-md-6 mb-3" id="optionB">
+                        <label asp-for="OptionB" class="form-label"></label>
+                        <textarea asp-for="OptionB" class="form-control" id="Ques_OptionB" rows="3"></textarea>
+                        <span asp-validation-for="OptionB" class="text-danger"></span>
+                    </div>
+                </div>
 
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">Option B</div>
-                            <div class="card-body">
-                                <textarea asp-for="OptionB" class="form-control mb-2" rows="2" placeholder="Option B text"></textarea>
-                                <input type="file" name="optionBImage" class="form-control" accept="image/*" />
-                                <small class="text-muted">Optional image for this option</small>
-                            </div>
-                        </div>
-
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">Option C</div>
-                            <div class="card-body">
-                                <textarea asp-for="OptionC" class="form-control mb-2" rows="2" placeholder="Option C text"></textarea>
-                                <input type="file" name="optionCImage" class="form-control" accept="image/*" />
-                                <small class="text-muted">Optional image for this option</small>
-                            </div>
-                        </div>
-
-                        <div class="card mb-3" id="optionDCard">
-                            <div class="card-header bg-light">Option D <span id="allOfAboveLabel" class="badge bg-warning" style="display:none;">Auto: All of the above</span></div>
-                            <div class="card-body" id="optionDContent">
-                                <textarea asp-for="OptionD" class="form-control mb-2" rows="2" placeholder="Option D text"></textarea>
-                                <input type="file" name="optionDImage" class="form-control" accept="image/*" />
-                                <small class="text-muted">Optional image for this option</small>
-                            </div>
-                        </div>
+                <div class="row" id="optionsRow2">
+                    <div class="col-md-6 mb-3" id="optionC">
+                        <label asp-for="OptionC" class="form-label"></label>
+                        <textarea asp-for="OptionC" class="form-control" id="Ques_OptionC" rows="3"></textarea>
+                        <span asp-validation-for="OptionC" class="text-danger"></span>
                     </div>
 
-                    <div id="trueFalseOptions" style="display:none;">
-                        <h5 class="mb-3 text-primary"><i class="bi bi-check-circle"></i> True/False Question</h5>
-                        <div class="alert alert-warning">
-                            For True/False questions, enter either "True" or "False" in the Correct Answer field below.
-                        </div>
+                    <div class="col-md-6 mb-3" id="optionD">
+                        <label asp-for="OptionD" class="form-label">Option D <small class="text-muted">(Customizable)</small></label>
+                        <textarea asp-for="OptionD" class="form-control" id="Ques_OptionD" rows="3"></textarea>
+                        <span asp-validation-for="OptionD" class="text-danger"></span>
                     </div>
+                </div>
 
-                    <h5 class="mb-3 text-primary"><i class="bi bi-check-circle-fill"></i> Correct Answer & Explanation</h5>
-
-                    <div class="form-floating mb-3">
-                        <input asp-for="CorrectAnswer" class="form-control" placeholder="Correct Answer" />
-                        <label asp-for="CorrectAnswer">Correct Answer</label>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="CorrectAnswer" class="form-label"></label>
+                        <select asp-for="CorrectAnswer" class="form-select" id="CorrectAnswer">
+                            <option value="">-- Select Correct Answer --</option>
+                            <option value="A" class="option-A">Option A</option>
+                            <option value="B" class="option-B">Option B</option>
+                            <option value="C" class="option-C">Option C</option>
+                            <option value="D" class="option-D">Option D</option>
+                            <option value="True" class="option-true">True</option>
+                            <option value="False" class="option-false">False</option>
+                        </select>
                         <span asp-validation-for="CorrectAnswer" class="text-danger"></span>
-                        <small class="text-muted" id="answerHint">For MCQ: Enter option letter (A, B, C, or D). For True/False: Enter "True" or "False"</small>
                     </div>
 
-                    <div class="form-floating mb-3">
-                        <textarea asp-for="Explanation" class="form-control" placeholder="Explanation" style="height: 100px"></textarea>
-                        <label asp-for="Explanation">Explanation (Optional)</label>
+                    <div class="col-md-3 mb-3">
+                        <label asp-for="Marks" class="form-label"></label>
+                        <input asp-for="Marks" class="form-control" type="number" min="0" max="100" value="1" />
+                        <span asp-validation-for="Marks" class="text-danger"></span>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Explanation Image (Optional)</label>
-                        <input type="file" name="explanationImage" class="form-control" accept="image/*" />
-                        <small class="text-muted">Upload image to explain the answer</small>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
-                                <input asp-for="Marks" class="form-control" type="number" min="1" max="100" placeholder="Marks" value="1" />
-                                <label asp-for="Marks">Marks</label>
-                                <span asp-validation-for="Marks" class="text-danger"></span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-check mt-3">
-                                <input asp-for="IsActive" class="form-check-input" checked />
-                                <label asp-for="IsActive" class="form-check-label">Active</label>
-                            </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="form-check mt-4 pt-2">
+                            <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
+                            <label asp-for="IsActive" class="form-check-label"></label>
                         </div>
                     </div>
-                    
-                    <div class="d-flex justify-content-between mt-4">
-                        <a asp-action="Index" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Back to List
-                        </a>
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-check-circle"></i> Create Question
-                        </button>
-                    </div>
-                </form>
-            </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Explanation" class="form-label"></label>
+                    <textarea asp-for="Explanation" class="form-control" id="Ques_SolutionDetails" rows="6"></textarea>
+                    <span asp-validation-for="Explanation" class="text-danger"></span>
+                    <small class="text-muted">Provide detailed explanation with images and equations if needed</small>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-list"></i> View All Questions
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save & Add Another
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        document.getElementById('questionType').addEventListener('change', function() {
-            var mcqOptions = document.getElementById('mcqOptions');
-            var trueFalseOptions = document.getElementById('trueFalseOptions');
-            var optionDContent = document.getElementById('optionDContent');
-            var allOfAboveLabel = document.getElementById('allOfAboveLabel');
-            var answerHint = document.getElementById('answerHint');
-            
-            if (this.value == '0') { // MCQ
-                mcqOptions.style.display = 'block';
-                trueFalseOptions.style.display = 'none';
-                optionDContent.style.display = 'block';
-                allOfAboveLabel.style.display = 'none';
-                answerHint.textContent = 'For MCQ: Enter option letter (A, B, C, or D)';
-            } else if (this.value == '1') { // True/False
-                mcqOptions.style.display = 'none';
-                trueFalseOptions.style.display = 'block';
-                answerHint.textContent = 'For True/False: Enter "True" or "False"';
-            } else if (this.value == '2') { // MCQ with All of Above
-                mcqOptions.style.display = 'block';
-                trueFalseOptions.style.display = 'none';
-                optionDContent.style.display = 'none';
-                allOfAboveLabel.style.display = 'inline';
-                answerHint.textContent = 'For MCQ (All of Above): Enter A, B, C, or D. Option D is automatically "All of the above"';
+    
+    @if (!string.IsNullOrEmpty(apiKey))
+    {
+        <!-- TinyMCE CDN -->
+        <script src="https://cdn.tiny.cloud/1/@apiKey/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+        
+        <!-- MathLive for Math Editor -->
+        <script src="https://unpkg.com/mathlive@0.98.3/dist/mathlive.min.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/mathlive@0.98.3/dist/mathlive-static.css" />
+        
+        <!-- MathJax for rendering LaTeX -->
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        
+        <script>
+            // Before form submission, enable the correct answer dropdown if it's disabled
+            $('form').on('submit', function(e) {
+                var questionType = $('#QuestionType').val();
+                if (questionType === '2') { // MCQWithAllOfAbove
+                    // Temporarily enable the dropdown so the value gets submitted
+                    $('#CorrectAnswer').prop('disabled', false);
+                }
+            });
+
+            $(document).ready(function() {
+                // Cascading dropdown logic
+                var selectedClassId = @(selectedClassId ?? 0);
+                var selectedSubjectId = @(selectedSubjectId ?? 0);
+                var selectedTopicId = @(selectedTopicId ?? 0);
+
+                // Set selected values if coming from successful save
+                if (selectedClassId > 0) {
+                    $('#ClassId').val(selectedClassId);
+                }
+                if (selectedSubjectId > 0) {
+                    $('#SubjectId').val(selectedSubjectId);
+                }
+
+                // Load topics if both class and subject are selected
+                if (selectedClassId > 0 && selectedSubjectId > 0) {
+                    loadTopics(selectedClassId, selectedSubjectId, selectedTopicId);
+                }
+
+                // Class or Subject change - load topics
+                $('#ClassId, #SubjectId').change(function() {
+                    console.log('Dropdown changed');
+                    var classId = $('#ClassId').val();
+                    var subjectId = $('#SubjectId').val();
+                    console.log('ClassId:', classId, 'SubjectId:', subjectId);
+
+                    if (classId && subjectId) {
+                        loadTopics(classId, subjectId);
+                    } else {
+                        $('#TopicId').html('<option value="">-- Select Topic --</option>');
+                    }
+                });
+
+                // Question Type change - show/hide options
+                $('#QuestionType').change(function() {
+                    var questionType = $(this).val();
+                    console.log('Question type changed to:', questionType);
+                    toggleOptions(questionType);
+                });
+
+                // Initialize options visibility on page load
+                var initialQuestionType = $('#QuestionType').val();
+                if (initialQuestionType) {
+                    toggleOptions(initialQuestionType);
+                }
+
+                function loadTopics(classId, subjectId, selectTopicId) {
+                    console.log('Loading topics for ClassId:', classId, 'SubjectId:', subjectId);
+                    
+                    $.ajax({
+                        url: '@Url.Action("GetTopicsByClassAndSubject", "Questions")',
+                        type: 'GET',
+                        data: { classId: classId, subjectId: subjectId },
+                        success: function(data) {
+                            console.log('Topics loaded:', data);
+                            var topicDropdown = $('#TopicId');
+                            topicDropdown.html('<option value="">-- Select Topic --</option>');
+                            
+                            if (data && data.length > 0) {
+                                $.each(data, function(i, topic) {
+                                    topicDropdown.append($('<option></option>')
+                                        .attr('value', topic.id)
+                                        .text(topic.name));
+                                });
+                            } else {
+                                topicDropdown.append('<option value="">No topics found</option>');
+                            }
+
+                            // Select the topic if provided
+                            if (selectTopicId > 0) {
+                                topicDropdown.val(selectTopicId);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error loading topics:', error);
+                            console.error('Response:', xhr.responseText);
+                            alert('Error loading topics: ' + error);
+                        }
+                    });
+                }
+
+                // Initialize TinyMCE
+                initializeTinyMCE();
+            });
+
+            function testAjax() {
+                console.log('Testing AJAX call...');
+                var classId = $('#ClassId').val();
+                var subjectId = $('#SubjectId').val();
+                console.log('ClassId:', classId, 'SubjectId:', subjectId);
+                
+                if (!classId || !subjectId) {
+                    alert('Please select both Class and Subject first');
+                    return;
+                }
+                
+                loadTopics(classId, subjectId);
             }
-        });
-    </script>
+
+            function toggleOptions(questionType) {
+                // Hide all options first
+                $('#optionA, #optionB, #optionC, #optionD').hide();
+                $('#optionsRow, #optionsRow2').hide();
+                
+                // Reset correct answer dropdown
+                $('#CorrectAnswer option').hide();
+                $('#CorrectAnswer option[value=""]').show();
+                $('#CorrectAnswer').prop('disabled', false);
+                $('#CorrectAnswer').parent().show();
+                
+                if (questionType === '0') { // MCQ
+                    // Show all 4 options
+                    $('#optionA, #optionB, #optionC, #optionD').show();
+                    $('#optionsRow, #optionsRow2').show();
+                    $('#CorrectAnswer option[value="A"], #CorrectAnswer option[value="B"], #CorrectAnswer option[value="C"], #CorrectAnswer option[value="D"]').show();
+                    $('#CorrectAnswer').val('');
+                } else if (questionType === '1') { // TrueFalse
+                    // Hide all options
+                    $('#optionA, #optionB, #optionC, #optionD').hide();
+                    $('#optionsRow, #optionsRow2').hide();
+                    $('#CorrectAnswer option[value="True"], #CorrectAnswer option[value="False"]').show();
+                    $('#CorrectAnswer').val('');
+                } else if (questionType === '2') { // MCQWithAllOfAbove
+                    // Show all 4 options including D
+                    $('#optionA, #optionB, #optionC, #optionD').show();
+                    $('#optionsRow').show();
+                    $('#optionsRow2').show();
+                    
+                    // Set Option D default value to "All of the Above" if empty
+                    if (!$('#OptionD').val()) {
+                        $('#OptionD').val('All of the Above');
+                    }
+                    
+                    // Automatically set correct answer to D and disable the dropdown
+                    $('#CorrectAnswer').val('D');
+                    $('#CorrectAnswer').prop('disabled', true);
+                    
+                    // Show a message that D is automatically selected as correct answer
+                    if ($('#allAboveMessage').length === 0) {
+                        $('#CorrectAnswer').parent().append('<div id="allAboveMessage" class="alert alert-info mt-2"><small><i class="bi bi-info-circle"></i> Option D is automatically selected as the correct answer. You can customize the text for Option D.</small></div>');
+                    }
+                    
+                    // Add placeholder text to Option D
+                    $('#OptionD').attr('placeholder', 'All of the Above (default)');
+                } else {
+                    // Remove the message if switching to another type
+                    $('#allAboveMessage').remove();
+                }
+                
+                // Remove the message and reset Option D if not "All of the Above" type
+                if (questionType !== '2') {
+                    $('#allAboveMessage').remove();
+                    // Reset Option D placeholder if switching away from "All of the Above"
+                    $('#OptionD').removeAttr('placeholder');
+                }
+            }
+
+            function initializeTinyMCE() {
+                const editorConfig = {
+                    height: 300,
+                    plugins: 'print preview importcss searchreplace autolink directionality code visualblocks visualchars fullscreen image link media template codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount textpattern help charmap quickbars emoticons',
+                    toolbar: 'undo redo | bold italic underline strikethrough | fontselect fontsizeselect formatselect | alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist checklist | forecolor backcolor casechange removeformat | pagebreak | charmap emoticons | fullscreen preview save print | insertfile image media link anchor codesample | ltr rtl | math',
+                    images_upload_url: '/api/upload/image',
+                    automatic_uploads: true,
+                    file_picker_types: 'image',
+                    paste_data_images: false, // Disable pasting images as base64
+                    paste_enable_default_filters: false,
+                    paste_preprocess: function(plugin, args) {
+                        // Convert base64 images to file uploads when pasting
+                        var content = args.content;
+                        var base64Pattern = /data:image\/([^;]+);base64,([^"']+)/g;
+                        var matches = content.match(base64Pattern);
+                        
+                        if (matches) {
+                            matches.forEach(function(match) {
+                                // Extract base64 data
+                                var base64Data = match.split(',')[1];
+                                var mimeType = match.match(/data:image\/([^;]+);/)[1];
+                                
+                                // Convert to blob
+                                var byteCharacters = atob(base64Data);
+                                var byteNumbers = new Array(byteCharacters.length);
+                                for (var i = 0; i < byteCharacters.length; i++) {
+                                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                }
+                                var byteArray = new Uint8Array(byteNumbers);
+                                var blob = new Blob([byteArray], {type: 'image/' + mimeType});
+                                
+                                // Upload the blob
+                                var formData = new FormData();
+                                formData.append('file', blob, 'pasted-image.' + mimeType);
+                                
+                                fetch('/api/upload/image', {
+                                    method: 'POST',
+                                    body: formData
+                                })
+                                .then(response => response.json())
+                                .then(result => {
+                                    if (result.location) {
+                                        // Replace base64 with file URL
+                                        args.content = args.content.replace(match, result.location);
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error uploading pasted image:', error);
+                                });
+                            });
+                        }
+                    },
+                    images_upload_handler: function (blobInfo, success, failure) {
+                        var formData = new FormData();
+                        formData.append('file', blobInfo.blob(), blobInfo.filename());
+
+                        // Show upload progress
+                        tinymce.activeEditor.notificationManager.open({
+                            text: 'Image uploading...',
+                            type: 'info',
+                            timeout: 2000
+                        });
+
+                        fetch('/api/upload/image', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(function(response) {
+                            if (!response.ok) {
+                                throw new Error('Upload failed with status: ' + response.status);
+                            }
+                            return response.json();
+                        })
+                        .then(function(result) {
+                            if (result && result.location) {
+                                success(result.location);
+                                tinymce.activeEditor.notificationManager.open({
+                                    text: 'Image uploaded successfully',
+                                    type: 'success',
+                                    timeout: 2000
+                                });
+                            } else {
+                                throw new Error(result.error || 'Image upload failed');
+                            }
+                        })
+                        .catch(function(error) {
+                            console.error('Upload error:', error);
+                            failure('Image upload failed: ' + error.message);
+                            tinymce.activeEditor.notificationManager.open({
+                                text: 'Image upload failed: ' + error.message,
+                                type: 'error',
+                                timeout: 3000
+                            });
+                        });
+                    },
+                    setup: function (editor) {
+                        // Add custom Math button
+                        editor.ui.registry.addButton('math', {
+                            text: 'Math',
+                            tooltip: 'Insert Math Equation',
+                            onAction: function () {
+                                showMathEditor(editor);
+                            }
+                        });
+                    },
+                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                };
+
+                // Initialize all textarea editors
+                tinymce.init({
+                    ...editorConfig,
+                    selector: '#Ques_Question'
+                });
+
+                tinymce.init({
+                    ...editorConfig,
+                    selector: '#Ques_OptionA'
+                });
+
+                tinymce.init({
+                    ...editorConfig,
+                    selector: '#Ques_OptionB'
+                });
+
+                tinymce.init({
+                    ...editorConfig,
+                    selector: '#Ques_OptionC'
+                });
+
+                tinymce.init({
+                    ...editorConfig,
+                    selector: '#Ques_OptionD'
+                });
+
+                tinymce.init({
+                    ...editorConfig,
+                    selector: '#Ques_SolutionDetails'
+                });
+            }
+
+            function showMathEditor(editor) {
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background-color: #ffffff;
+                    padding: 20px;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+                    z-index: 10000;
+                    width: 400px;
+                    border-radius: 8px;
+                `;
+
+                modal.innerHTML = `
+                    <h3 style="margin-top: 0;">Math Equation Editor</h3>
+                    <math-field id="math-editor" style="width: 100%; font-size: 1.2em; border: 1px solid #ccc; padding: 8px; border-radius: 4px;"></math-field>
+                    <div style="margin-top: 10px; text-align: right;">
+                        <button id="insert-math" style="background-color: #007BFF; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-right: 5px;">Insert</button>
+                        <button id="cancel-math" style="background-color: #ccc; color: black; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Cancel</button>
+                    </div>
+                `;
+
+                document.body.appendChild(modal);
+
+                document.getElementById('insert-math').onclick = function () {
+                    const mathField = document.getElementById('math-editor');
+                    const mathLatex = mathField.getValue();
+                    if (mathLatex) {
+                        editor.insertContent(`\\(${mathLatex}\\)`);
+                        if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+                            MathJax.typesetPromise();
+                        }
+                    }
+                    document.body.removeChild(modal);
+                };
+
+                document.getElementById('cancel-math').onclick = function () {
+                    document.body.removeChild(modal);
+                };
+            }
+        </script>
+    }
 }
-
-
-

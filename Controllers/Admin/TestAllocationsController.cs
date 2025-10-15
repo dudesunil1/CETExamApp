@@ -101,8 +101,9 @@ namespace CETExamApp.Controllers.Admin
                         TestId = testId,
                         StudentId = studentId,
                         AllocatedDate = DateTime.UtcNow,
-                        ScheduledStartTime = scheduledStartTime,
-                        ScheduledEndTime = scheduledEndTime,
+                        // Convert local time to UTC for storage
+                        ScheduledStartTime = scheduledStartTime?.ToUniversalTime(),
+                        ScheduledEndTime = scheduledEndTime?.ToUniversalTime(),
                         AllocatedBy = User.Identity?.Name
                     };
 
@@ -144,8 +145,9 @@ namespace CETExamApp.Controllers.Admin
                         TestId = testId,
                         StudentId = student.Id,
                         AllocatedDate = DateTime.UtcNow,
-                        ScheduledStartTime = scheduledStartTime,
-                        ScheduledEndTime = scheduledEndTime,
+                        // Convert local time to UTC for storage
+                        ScheduledStartTime = scheduledStartTime?.ToUniversalTime(),
+                        ScheduledEndTime = scheduledEndTime?.ToUniversalTime(),
                         AllocatedBy = User.Identity?.Name
                     };
 
@@ -180,8 +182,8 @@ namespace CETExamApp.Controllers.Admin
             var allocation = await _context.TestAllocations.FindAsync(id);
             if (allocation == null) return NotFound();
 
-            allocation.ScheduledStartTime = scheduledStartTime;
-            allocation.ScheduledEndTime = scheduledEndTime;
+            allocation.ScheduledStartTime = scheduledStartTime.ToUniversalTime();
+            allocation.ScheduledEndTime = scheduledEndTime.ToUniversalTime();
 
             _context.Update(allocation);
             await _context.SaveChangesAsync();

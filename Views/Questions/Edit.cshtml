@@ -1,246 +1,276 @@
 @model CETExamApp.Models.Question
+
 @{
     ViewData["Title"] = "Edit Question";
+    var apiKey = ViewBag.TinyMceApiKey as string;
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-12">
-        <div class="card shadow">
-            <div class="card-header bg-warning text-white">
-                <h4 class="mb-0"><i class="bi bi-pencil"></i> Edit Question</h4>
-            </div>
-            <div class="card-body">
-                <form asp-action="Edit" method="post" enctype="multipart/form-data">
-                    <input type="hidden" asp-for="Id" />
-                    <input type="hidden" asp-for="CreatedDate" />
-                    <input type="hidden" asp-for="CreatedBy" />
-                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                    
-                    <h5 class="mb-3 text-primary"><i class="bi bi-gear"></i> Question Settings</h5>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
-                                <select asp-for="TopicId" class="form-select" asp-items="ViewBag.TopicId">
-                                    <option value="">-- Select Topic --</option>
-                                </select>
-                                <label asp-for="TopicId">Topic</label>
-                                <span asp-validation-for="TopicId" class="text-danger"></span>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-floating mb-3">
-                                <select asp-for="QuestionType" class="form-select" id="questionType">
-                                    <option value="0">MCQ</option>
-                                    <option value="1">True/False</option>
-                                    <option value="2">MCQ (All of Above)</option>
-                                </select>
-                                <label asp-for="QuestionType">Question Type</label>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-floating mb-3">
-                                <select asp-for="DifficultyLevel" class="form-select">
-                                    <option value="0">Easy</option>
-                                    <option value="1">Medium</option>
-                                    <option value="2">Hard</option>
-                                </select>
-                                <label asp-for="DifficultyLevel">Difficulty</label>
-                            </div>
-                        </div>
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4"><i class="bi bi-pencil text-info"></i> Edit Question</h2>
+        </div>
+    </div>
+
+    @if (string.IsNullOrEmpty(apiKey))
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i> <strong>Warning:</strong> No active TinyMCE API key found. 
+            Please <a asp-controller="ApiKeys" asp-action="Create">add an API key</a> to enable the rich text editor.
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="CreatedDate" />
+                <input type="hidden" asp-for="CreatedBy" />
+                
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="TopicId" class="form-label"></label>
+                        <select asp-for="TopicId" class="form-select" asp-items="ViewBag.TopicId">
+                            <option value="">-- Select Topic --</option>
+                        </select>
+                        <span asp-validation-for="TopicId" class="text-danger"></span>
                     </div>
 
-                    <h5 class="mb-3 text-primary"><i class="bi bi-question-circle"></i> Question Content</h5>
-
-                    <div class="form-floating mb-3">
-                        <textarea asp-for="QuestionText" class="form-control" placeholder="Question Text" style="height: 120px"></textarea>
-                        <label asp-for="QuestionText">Question Text</label>
-                        <span asp-validation-for="QuestionText" class="text-danger"></span>
+                    <div class="col-md-3 mb-3">
+                        <label asp-for="QuestionType" class="form-label"></label>
+                        <select asp-for="QuestionType" class="form-select" asp-items="Html.GetEnumSelectList<CETExamApp.Models.QuestionType>()">
+                        </select>
+                        <span asp-validation-for="QuestionType" class="text-danger"></span>
                     </div>
 
-                    @if (!string.IsNullOrEmpty(Model.QuestionImagePath))
-                    {
-                        <div class="mb-2">
-                            <label class="form-label">Current Question Image:</label><br/>
-                            <img src="@Model.QuestionImagePath" alt="Current Question" class="border rounded p-2" style="max-height: 150px;" />
-                        </div>
-                    }
+                    <div class="col-md-3 mb-3">
+                        <label asp-for="DifficultyLevel" class="form-label"></label>
+                        <select asp-for="DifficultyLevel" class="form-select" asp-items="Html.GetEnumSelectList<CETExamApp.Models.DifficultyLevel>()">
+                        </select>
+                        <span asp-validation-for="DifficultyLevel" class="text-danger"></span>
+                    </div>
+                </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Update Question Image (Optional)</label>
-                        <input type="file" name="questionImage" class="form-control" accept="image/*" />
-                        <small class="text-muted">Leave empty to keep current image</small>
+                <div class="mb-3">
+                    <label asp-for="QuestionText" class="form-label"></label>
+                    <textarea asp-for="QuestionText" class="form-control" id="Ques_Question" rows="6"></textarea>
+                    <span asp-validation-for="QuestionText" class="text-danger"></span>
+                    <small class="text-muted">You can insert images and math equations directly in the editor</small>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="OptionA" class="form-label"></label>
+                        <textarea asp-for="OptionA" class="form-control" id="Ques_Answer" rows="3"></textarea>
+                        <span asp-validation-for="OptionA" class="text-danger"></span>
                     </div>
 
-                    <div id="mcqOptions">
-                        <h5 class="mb-3 text-primary"><i class="bi bi-list-check"></i> Answer Options</h5>
-                        
-                        <!-- Option A -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">Option A</div>
-                            <div class="card-body">
-                                @if (!string.IsNullOrEmpty(Model.OptionAImagePath))
-                                {
-                                    <div class="mb-2">
-                                        <img src="@Model.OptionAImagePath" alt="Current" style="max-height: 80px;" />
-                                    </div>
-                                }
-                                <textarea asp-for="OptionA" class="form-control mb-2" rows="2"></textarea>
-                                <input type="file" name="optionAImage" class="form-control" accept="image/*" />
-                                <small class="text-muted">Update image (optional)</small>
-                            </div>
-                        </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="OptionB" class="form-label"></label>
+                        <textarea asp-for="OptionB" class="form-control" id="Ques_OptionB" rows="3"></textarea>
+                        <span asp-validation-for="OptionB" class="text-danger"></span>
+                    </div>
+                </div>
 
-                        <!-- Option B -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">Option B</div>
-                            <div class="card-body">
-                                @if (!string.IsNullOrEmpty(Model.OptionBImagePath))
-                                {
-                                    <div class="mb-2">
-                                        <img src="@Model.OptionBImagePath" alt="Current" style="max-height: 80px;" />
-                                    </div>
-                                }
-                                <textarea asp-for="OptionB" class="form-control mb-2" rows="2"></textarea>
-                                <input type="file" name="optionBImage" class="form-control" accept="image/*" />
-                                <small class="text-muted">Update image (optional)</small>
-                            </div>
-                        </div>
-
-                        <!-- Option C -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">Option C</div>
-                            <div class="card-body">
-                                @if (!string.IsNullOrEmpty(Model.OptionCImagePath))
-                                {
-                                    <div class="mb-2">
-                                        <img src="@Model.OptionCImagePath" alt="Current" style="max-height: 80px;" />
-                                    </div>
-                                }
-                                <textarea asp-for="OptionC" class="form-control mb-2" rows="2"></textarea>
-                                <input type="file" name="optionCImage" class="form-control" accept="image/*" />
-                                <small class="text-muted">Update image (optional)</small>
-                            </div>
-                        </div>
-
-                        <!-- Option D -->
-                        <div class="card mb-3" id="optionDCard">
-                            <div class="card-header bg-light">Option D <span id="allOfAboveLabel" class="badge bg-warning" style="display:none;">Auto: All of the above</span></div>
-                            <div class="card-body" id="optionDContent">
-                                @if (!string.IsNullOrEmpty(Model.OptionDImagePath))
-                                {
-                                    <div class="mb-2">
-                                        <img src="@Model.OptionDImagePath" alt="Current" style="max-height: 80px;" />
-                                    </div>
-                                }
-                                <textarea asp-for="OptionD" class="form-control mb-2" rows="2"></textarea>
-                                <input type="file" name="optionDImage" class="form-control" accept="image/*" />
-                                <small class="text-muted">Update image (optional)</small>
-                            </div>
-                        </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="OptionC" class="form-label"></label>
+                        <textarea asp-for="OptionC" class="form-control" id="Ques_OptionC" rows="3"></textarea>
+                        <span asp-validation-for="OptionC" class="text-danger"></span>
                     </div>
 
-                    <div id="trueFalseOptions" style="display:none;">
-                        <h5 class="mb-3 text-primary"><i class="bi bi-check-circle"></i> True/False Question</h5>
-                        <div class="alert alert-warning">
-                            For True/False questions, enter either "True" or "False" in the Correct Answer field below.
-                        </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="OptionD" class="form-label"></label>
+                        <textarea asp-for="OptionD" class="form-control" id="Ques_OptionD" rows="3"></textarea>
+                        <span asp-validation-for="OptionD" class="text-danger"></span>
                     </div>
+                </div>
 
-                    <h5 class="mb-3 text-primary"><i class="bi bi-check-circle-fill"></i> Correct Answer & Explanation</h5>
-
-                    <div class="form-floating mb-3">
-                        <input asp-for="CorrectAnswer" class="form-control" placeholder="Correct Answer" />
-                        <label asp-for="CorrectAnswer">Correct Answer</label>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="CorrectAnswer" class="form-label"></label>
+                        <select asp-for="CorrectAnswer" class="form-select">
+                            <option value="">-- Select Correct Answer --</option>
+                            <option value="A">Option A</option>
+                            <option value="B">Option B</option>
+                            <option value="C">Option C</option>
+                            <option value="D">Option D</option>
+                        </select>
                         <span asp-validation-for="CorrectAnswer" class="text-danger"></span>
-                        <small class="text-muted" id="answerHint">For MCQ: Enter A, B, C, or D. For True/False: Enter "True" or "False"</small>
                     </div>
 
-                    <div class="form-floating mb-3">
-                        <textarea asp-for="Explanation" class="form-control" placeholder="Explanation" style="height: 100px"></textarea>
-                        <label asp-for="Explanation">Explanation</label>
+                    <div class="col-md-3 mb-3">
+                        <label asp-for="Marks" class="form-label"></label>
+                        <input asp-for="Marks" class="form-control" type="number" min="0" max="100" />
+                        <span asp-validation-for="Marks" class="text-danger"></span>
                     </div>
 
-                    @if (!string.IsNullOrEmpty(Model.ExplanationImagePath))
-                    {
-                        <div class="mb-2">
-                            <label class="form-label">Current Explanation Image:</label><br/>
-                            <img src="@Model.ExplanationImagePath" alt="Current Explanation" class="border rounded p-2" style="max-height: 150px;" />
-                        </div>
-                    }
-
-                    <div class="mb-3">
-                        <label class="form-label">Update Explanation Image (Optional)</label>
-                        <input type="file" name="explanationImage" class="form-control" accept="image/*" />
-                        <small class="text-muted">Leave empty to keep current image</small>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
-                                <input asp-for="Marks" class="form-control" type="number" min="1" max="100" placeholder="Marks" />
-                                <label asp-for="Marks">Marks</label>
-                                <span asp-validation-for="Marks" class="text-danger"></span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-check mt-3">
-                                <input asp-for="IsActive" class="form-check-input" />
-                                <label asp-for="IsActive" class="form-check-label">Active</label>
-                            </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="form-check mt-4 pt-2">
+                            <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                            <label asp-for="IsActive" class="form-check-label"></label>
                         </div>
                     </div>
-                    
-                    <div class="d-flex justify-content-between mt-4">
-                        <a asp-action="Index" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Back to List
-                        </a>
-                        <button type="submit" class="btn btn-warning btn-lg">
-                            <i class="bi bi-check-circle"></i> Update Question
-                        </button>
-                    </div>
-                </form>
-            </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Explanation" class="form-label"></label>
+                    <textarea asp-for="Explanation" class="form-control" id="Ques_SolutionDetails" rows="6"></textarea>
+                    <span asp-validation-for="Explanation" class="text-danger"></span>
+                    <small class="text-muted">Provide detailed explanation with images and equations if needed</small>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Update Question
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        var questionType = document.getElementById('questionType');
+    
+    @if (!string.IsNullOrEmpty(apiKey))
+    {
+        <!-- TinyMCE CDN -->
+        <script src="https://cdn.tiny.cloud/1/@apiKey/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
         
-        function updateFormBasedOnType() {
-            var mcqOptions = document.getElementById('mcqOptions');
-            var trueFalseOptions = document.getElementById('trueFalseOptions');
-            var optionDContent = document.getElementById('optionDContent');
-            var allOfAboveLabel = document.getElementById('allOfAboveLabel');
-            var answerHint = document.getElementById('answerHint');
-            
-            if (questionType.value == '0') { // MCQ
-                mcqOptions.style.display = 'block';
-                trueFalseOptions.style.display = 'none';
-                optionDContent.style.display = 'block';
-                allOfAboveLabel.style.display = 'none';
-                answerHint.textContent = 'For MCQ: Enter option letter (A, B, C, or D)';
-            } else if (questionType.value == '1') { // True/False
-                mcqOptions.style.display = 'none';
-                trueFalseOptions.style.display = 'block';
-                answerHint.textContent = 'For True/False: Enter "True" or "False"';
-            } else if (questionType.value == '2') { // MCQ with All of Above
-                mcqOptions.style.display = 'block';
-                trueFalseOptions.style.display = 'none';
-                optionDContent.style.display = 'none';
-                allOfAboveLabel.style.display = 'inline';
-                answerHint.textContent = 'For MCQ (All of Above): Enter A, B, C, or D. Option D is "All of the above"';
-            }
-        }
+        <!-- MathLive for Math Editor -->
+        <script src="https://unpkg.com/mathlive@0.98.3/dist/mathlive.min.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/mathlive@0.98.3/dist/mathlive-static.css" />
         
-        // Initialize on load
-        updateFormBasedOnType();
+        <!-- MathJax for rendering LaTeX -->
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
         
-        // Update on change
-        questionType.addEventListener('change', updateFormBasedOnType);
-    </script>
-}
+        <script>
+            $(document).ready(function() {
+                initializeTinyMCE();
+            });
 
+            function initializeTinyMCE() {
+                const editorConfig = {
+                    height: 300,
+                    plugins: 'print preview importcss searchreplace autolink directionality code visualblocks visualchars fullscreen image link media template codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount textpattern help charmap quickbars emoticons',
+                    toolbar: 'undo redo | bold italic underline strikethrough | fontselect fontsizeselect formatselect | alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist checklist | forecolor backcolor casechange removeformat | pagebreak | charmap emoticons | fullscreen preview save print | insertfile image media link anchor codesample | ltr rtl | math',
+                    images_upload_url: '/api/upload/image',
+                    automatic_uploads: true,
+                    file_picker_types: 'image',
+                    images_upload_handler: function (blobInfo, success, failure) {
+                        var formData = new FormData();
+                        formData.append('file', blobInfo.blob(), blobInfo.filename());
+
+                        fetch('/api/upload/image', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(result => {
+                            if (result.location) {
+                                success(result.location);
+                            } else {
+                                failure('Image upload failed');
+                            }
+                        })
+                        .catch(error => {
+                            failure('Image upload failed: ' + error);
+                        });
+                    },
+                    setup: function (editor) {
+                        // Add custom Math button
+                        editor.ui.registry.addButton('math', {
+                            text: 'Math',
+                            tooltip: 'Insert Math Equation',
+                            onAction: function () {
+                                showMathEditor(editor);
+                            }
+                        });
+                    },
+                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                };
+
+                // Initialize all textarea editors
+                tinymce.init({
+                    ...editorConfig,
+                    selector: '#Ques_Question'
+                });
+
+                tinymce.init({
+                    ...editorConfig,
+                    selector: '#Ques_Answer'
+                });
+
+                tinymce.init({
+                    ...editorConfig,
+                    selector: '#Ques_OptionB'
+                });
+
+                tinymce.init({
+                    ...editorConfig,
+                    selector: '#Ques_OptionC'
+                });
+
+                tinymce.init({
+                    ...editorConfig,
+                    selector: '#Ques_OptionD'
+                });
+
+                tinymce.init({
+                    ...editorConfig,
+                    selector: '#Ques_SolutionDetails'
+                });
+            }
+
+            function showMathEditor(editor) {
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background-color: #ffffff;
+                    padding: 20px;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+                    z-index: 10000;
+                    width: 400px;
+                    border-radius: 8px;
+                `;
+
+                modal.innerHTML = `
+                    <h3 style="margin-top: 0;">Math Equation Editor</h3>
+                    <math-field id="math-editor" style="width: 100%; font-size: 1.2em; border: 1px solid #ccc; padding: 8px; border-radius: 4px;"></math-field>
+                    <div style="margin-top: 10px; text-align: right;">
+                        <button id="insert-math" style="background-color: #007BFF; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-right: 5px;">Insert</button>
+                        <button id="cancel-math" style="background-color: #ccc; color: black; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Cancel</button>
+                    </div>
+                `;
+
+                document.body.appendChild(modal);
+
+                document.getElementById('insert-math').onclick = function () {
+                    const mathField = document.getElementById('math-editor');
+                    const mathLatex = mathField.getValue();
+                    if (mathLatex) {
+                        editor.insertContent(`\\(${mathLatex}\\)`);
+                        if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+                            MathJax.typesetPromise();
+                        }
+                    }
+                    document.body.removeChild(modal);
+                };
+
+                document.getElementById('cancel-math').onclick = function () {
+                    document.body.removeChild(modal);
+                };
+            }
+        </script>
+    }
+}

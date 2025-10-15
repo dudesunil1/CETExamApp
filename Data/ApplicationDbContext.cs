@@ -24,6 +24,7 @@ namespace CETExamApp.Data
         public DbSet<StudentAnswer> StudentAnswers { get; set; }
         public DbSet<ExamCenterConfig> ExamCenterConfigs { get; set; }
         public DbSet<TestAttempt> TestAttempts { get; set; }
+        public DbSet<ApiKey> ApiKeys { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

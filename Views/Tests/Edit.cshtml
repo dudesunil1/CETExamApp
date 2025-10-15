@@ -65,13 +65,15 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label asp-for="StartDateTime" class="form-label">Start Date & Time</label>
-                                <input asp-for="StartDateTime" type="datetime-local" class="form-control" />
+                                <input asp-for="StartDateTime" type="datetime-local" class="form-control" 
+                                       value="@(Model.StartDateTime?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm"))" />
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label asp-for="EndDateTime" class="form-label">End Date & Time</label>
-                                <input asp-for="EndDateTime" type="datetime-local" class="form-control" />
+                                <input asp-for="EndDateTime" type="datetime-local" class="form-control" 
+                                       value="@(Model.EndDateTime?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm"))" />
                             </div>
                         </div>
                     </div>

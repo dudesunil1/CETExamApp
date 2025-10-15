@@ -1,0 +1,104 @@
+@model IEnumerable<CETExamApp.Models.ApiKey>
+
+@{
+    ViewData["Title"] = "API Keys Management";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="fw-bold">
+                    <i class="bi bi-key text-primary"></i> TinyMCE API Keys Management
+                </h2>
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add New API Key
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            @if (!Model.Any())
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No API keys found. Please add a TinyMCE API key to enable the rich text editor.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>API Key</th>
+                                <th>Email</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Created Date</th>
+                                <th>Last Modified</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <code class="small">@(item.ApiKeyValue.Length > 30 ? item.ApiKeyValue.Substring(0, 30) + "..." : item.ApiKeyValue)</code>
+                                    </td>
+                                    <td>@(item.Email ?? "N/A")</td>
+                                    <td>@(item.Description ?? "N/A")</td>
+                                    <td>
+                                        @if (item.InActive)
+                                        {
+                                            <span class="badge bg-danger">Inactive</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">Active</span>
+                                        }
+                                    </td>
+                                    <td>@item.CreatedDate.ToString("MMM dd, yyyy")</td>
+                                    <td>@(item.LastModified?.ToString("MMM dd, yyyy") ?? "N/A")</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <div class="alert alert-info">
+            <h6><i class="bi bi-info-circle"></i> How to get TinyMCE API Key:</h6>
+            <ol class="mb-0">
+                <li>Visit <a href="https://www.tiny.cloud/auth/signup/" target="_blank">TinyMCE Cloud</a></li>
+                <li>Sign up for a free account</li>
+                <li>Get your API key from the dashboard</li>
+                <li>Add it here to enable the rich text editor</li>
+            </ol>
+        </div>
+    </div>
+</div>
+
