@@ -21,7 +21,6 @@ namespace CETExamApp.Controllers.Admin
         {
             var allocationsQuery = _context.TestAllocations
                 .Include(ta => ta.Test)
-                .ThenInclude(t => t!.Subject)
                 .Include(ta => ta.Student)
                 .AsQueryable();
 
@@ -32,15 +31,13 @@ namespace CETExamApp.Controllers.Admin
                 .OrderByDescending(ta => ta.AllocatedDate)
                 .ToListAsync();
 
-            ViewData["TestId"] = new SelectList(await _context.Tests.Include(t => t.Subject).ToListAsync(), "Id", "Title", testId);
+            ViewData["TestId"] = new SelectList(await _context.Tests.ToListAsync(), "Id", "Title", testId);
             return View(allocations);
         }
 
         public async Task<IActionResult> Allocate(int? testId)
         {
             var tests = await _context.Tests
-                .Include(t => t.Subject)
-                .Include(t => t.Group)
                 .Where(t => t.Status == TestStatus.Published || t.Status == TestStatus.Draft)
                 .ToListAsync();
             

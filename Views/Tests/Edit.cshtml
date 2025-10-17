@@ -32,16 +32,7 @@
                     <h5 class="mb-3 text-primary"><i class="bi bi-bookmark"></i> Academic Assignment</h5>
 
                     <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-floating mb-3">
-                                <select asp-for="SubjectId" class="form-select" asp-items="ViewBag.SubjectId">
-                                    <option value="">-- Select Subject --</option>
-                                </select>
-                                <label asp-for="SubjectId">Subject</label>
-                                <span asp-validation-for="SubjectId" class="text-danger"></span>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-floating mb-3">
                                 <select asp-for="ClassId" class="form-select" asp-items="ViewBag.ClassId">
                                     <option value="">-- Select Class --</option>
@@ -49,54 +40,30 @@
                                 <label asp-for="ClassId">Class</label>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-floating mb-3">
-                                <select asp-for="GroupId" class="form-select" asp-items="ViewBag.GroupId">
-                                    <option value="">-- Select Group --</option>
-                                </select>
-                                <label asp-for="GroupId">Group</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <h5 class="mb-3 text-primary"><i class="bi bi-clock"></i> Test Schedule & Duration</h5>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label asp-for="StartDateTime" class="form-label">Start Date & Time</label>
-                                <input asp-for="StartDateTime" type="datetime-local" class="form-control" 
-                                       value="@(Model.StartDateTime?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm"))" />
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label asp-for="EndDateTime" class="form-label">End Date & Time</label>
-                                <input asp-for="EndDateTime" type="datetime-local" class="form-control" 
-                                       value="@(Model.EndDateTime?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm"))" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-floating mb-3">
-                                <input asp-for="DurationMinutes" class="form-control" type="number" min="1" max="1440" />
+                                <input asp-for="DurationMinutes" class="form-control" type="number" min="1" max="1440" placeholder="Duration" />
                                 <label asp-for="DurationMinutes">Duration (Minutes)</label>
                                 <span asp-validation-for="DurationMinutes" class="text-danger"></span>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                    </div>
+
+                    <h5 class="mb-3 text-primary"><i class="bi bi-clock"></i> Test Configuration</h5>
+
+                    <div class="row">
+                        <div class="col-md-6">
                             <div class="form-floating mb-3">
                                 <input asp-for="TotalMarks" class="form-control" type="number" min="1" />
                                 <label asp-for="TotalMarks">Total Marks</label>
                                 <span asp-validation-for="TotalMarks" class="text-danger"></span>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <div class="form-floating mb-3">
                                 <input asp-for="PassingMarks" class="form-control" type="number" min="0" max="100" />
                                 <label asp-for="PassingMarks">Passing Marks</label>
+                                <span asp-validation-for="PassingMarks" class="text-danger"></span>
                             </div>
                         </div>
                     </div>

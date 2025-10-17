@@ -110,9 +110,9 @@ namespace CETExamApp.Data
                 .OnDelete(DeleteBehavior.SetNull);
 
             builder.Entity<Test>()
-                .HasOne(t => t.Group)
+                .HasOne(t => t.Class)
                 .WithMany()
-                .HasForeignKey(t => t.GroupId)
+                .HasForeignKey(t => t.ClassId)
                 .OnDelete(DeleteBehavior.SetNull);
 
             builder.Entity<TestAttempt>()
@@ -132,6 +132,7 @@ namespace CETExamApp.Data
                 .WithMany()
                 .HasForeignKey(ta => ta.TestId)
                 .OnDelete(DeleteBehavior.Restrict);
+
         }
     }
 }

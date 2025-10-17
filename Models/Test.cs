@@ -23,15 +23,8 @@ namespace CETExamApp.Models
         [StringLength(1000)]
         public string? Description { get; set; }
 
-        [Required]
-        [Display(Name = "Subject")]
-        public int SubjectId { get; set; }
-
         [Display(Name = "Class")]
         public int? ClassId { get; set; }
-
-        [Display(Name = "Group")]
-        public int? GroupId { get; set; }
 
         [Required]
         [Range(1, 1440)]
@@ -45,12 +38,6 @@ namespace CETExamApp.Models
         [Range(0, 100)]
         [Display(Name = "Passing Marks")]
         public int PassingMarks { get; set; }
-
-        [Display(Name = "Start Date & Time")]
-        public DateTime? StartDateTime { get; set; }
-
-        [Display(Name = "End Date & Time")]
-        public DateTime? EndDateTime { get; set; }
 
         public TestStatus Status { get; set; } = TestStatus.Draft;
 
@@ -68,9 +55,7 @@ namespace CETExamApp.Models
         public string? CreatedBy { get; set; }
 
         // Navigation properties
-        public virtual Subject? Subject { get; set; }
         public virtual Class? Class { get; set; }
-        public virtual Group? Group { get; set; }
         public virtual ICollection<TestQuestion>? TestQuestions { get; set; }
         public virtual ICollection<TestAllocation>? TestAllocations { get; set; }
         public virtual ICollection<TestResult>? TestResults { get; set; }

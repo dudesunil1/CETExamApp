@@ -15,17 +15,14 @@
             <div class="card-body">
                 <h5>@Model.Test?.Title</h5>
                 <div class="row">
-                    <div class="col-md-3">
-                        <p class="mb-1"><strong>Subject:</strong> @Model.Test?.Subject?.Name</p>
-                    </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <p class="mb-1"><strong>Class:</strong> @(Model.Test?.Class?.Name ?? "All")</p>
                     </div>
-                    <div class="col-md-3">
-                        <p class="mb-1"><strong>Group:</strong> @(Model.Test?.Group?.Name ?? "All")</p>
-                    </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <p class="mb-1"><strong>Duration:</strong> @Model.Test?.DurationMinutes min</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="mb-1"><strong>Total Marks:</strong> @Model.Test?.TotalMarks</p>
                     </div>
                 </div>
             </div>

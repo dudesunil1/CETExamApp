@@ -32,8 +32,6 @@ namespace CETExamApp.Controllers
             // Get upcoming tests (allocated but not attempted or in progress)
             var upcomingTests = await _context.TestAllocations
                 .Include(ta => ta.Test)
-                    .ThenInclude(t => t!.Subject)
-                .Include(ta => ta.Test)
                     .ThenInclude(t => t!.TestQuestions)
                 .Where(ta => ta.StudentId == user.Id && !ta.IsCompleted)
                 .OrderBy(ta => ta.ScheduledStartTime)
@@ -42,7 +40,6 @@ namespace CETExamApp.Controllers
             // Get completed tests (with results)
             var completedTests = await _context.TestResults
                 .Include(tr => tr.Test)
-                    .ThenInclude(t => t!.Subject)
                 .Where(tr => tr.StudentId == user.Id)
                 .OrderByDescending(tr => tr.SubmittedAt)
                 .ToListAsync();
@@ -50,7 +47,6 @@ namespace CETExamApp.Controllers
             // Get in-progress tests
             var inProgressTests = await _context.TestAttempts
                 .Include(ta => ta.Test)
-                    .ThenInclude(t => t!.Subject)
                 .Where(ta => ta.StudentId == user.Id && ta.Status == TestAttemptStatus.InProgress)
                 .ToListAsync();
 
@@ -178,8 +174,6 @@ namespace CETExamApp.Controllers
             if (user == null) return Challenge();
 
             var attempt = await _context.TestAttempts
-                .Include(ta => ta.Test)
-                    .ThenInclude(t => t!.Subject)
                 .Include(ta => ta.Test)
                     .ThenInclude(t => t!.TestQuestions)
                         .ThenInclude(tq => tq.Question)
@@ -432,7 +426,6 @@ namespace CETExamApp.Controllers
 
             var attempt = await _context.TestAttempts
                 .Include(ta => ta.Test)
-                    .ThenInclude(t => t!.Subject)
                 .FirstOrDefaultAsync(ta => ta.Id == attemptId && ta.StudentId == user.Id);
 
             if (attempt == null)

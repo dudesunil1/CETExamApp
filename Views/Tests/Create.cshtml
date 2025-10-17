@@ -29,73 +29,38 @@
                     <h5 class="mb-3 text-primary"><i class="bi bi-bookmark"></i> Academic Assignment</h5>
 
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-floating mb-3">
-                                <select asp-for="SubjectId" class="form-select" asp-items="ViewBag.SubjectId" id="subjectSelect">
-                                    <option value="">-- Select Subject --</option>
-                                </select>
-                                <label asp-for="SubjectId">Subject (P/C/M/B)</label>
-                                <span asp-validation-for="SubjectId" class="text-danger"></span>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-floating mb-3">
-                                <select asp-for="ClassId" class="form-select" asp-items="ViewBag.ClassId">
+                                <select asp-for="ClassId" class="form-select" asp-items="ViewBag.ClassId" id="classSelect">
                                     <option value="">-- Select Class --</option>
                                 </select>
                                 <label asp-for="ClassId">Class (10th/11th/12th)</label>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-floating mb-3">
-                                <select asp-for="GroupId" class="form-select" asp-items="ViewBag.GroupId">
-                                    <option value="">-- Select Group --</option>
-                                </select>
-                                <label asp-for="GroupId">Group (PCMB/PCB/PCM)</label>
+                                <input asp-for="DurationMinutes" class="form-control" placeholder="Duration" />
+                                <label asp-for="DurationMinutes">Duration (Minutes)</label>
+                                <span asp-validation-for="DurationMinutes" class="text-danger"></span>
                             </div>
                         </div>
                     </div>
 
                     <div class="alert alert-info">
-                        <i class="bi bi-info-circle"></i> <strong>Note:</strong> After creating the test, you'll be able to select topics and questions from the selected subject.
+                        <i class="bi bi-info-circle"></i> <strong>Note:</strong> After creating the test, you'll be able to select multiple subjects, topics and questions using the wizard.
                     </div>
 
-                    <h5 class="mb-3 text-primary"><i class="bi bi-clock"></i> Test Schedule & Duration</h5>
+                    <h5 class="mb-3 text-primary"><i class="bi bi-clock"></i> Test Configuration</h5>
 
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <label asp-for="StartDateTime" class="form-label">Start Date & Time</label>
-                                <input asp-for="StartDateTime" type="datetime-local" class="form-control" />
-                                <small class="text-muted">When the test becomes available</small>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label asp-for="EndDateTime" class="form-label">End Date & Time</label>
-                                <input asp-for="EndDateTime" type="datetime-local" class="form-control" />
-                                <small class="text-muted">When the test closes</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
-                                <input asp-for="DurationMinutes" class="form-control" type="number" min="1" max="1440" placeholder="Duration" />
-                                <label asp-for="DurationMinutes">Duration (Minutes)</label>
-                                <span asp-validation-for="DurationMinutes" class="text-danger"></span>
-                                <small class="text-muted">Test time limit per student</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
                             <div class="form-floating mb-3">
                                 <input asp-for="TotalMarks" class="form-control" type="number" min="1" placeholder="Total Marks" />
                                 <label asp-for="TotalMarks">Total Marks</label>
                                 <span asp-validation-for="TotalMarks" class="text-danger"></span>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <div class="form-floating mb-3">
                                 <input asp-for="PassingMarks" class="form-control" type="number" min="0" max="100" placeholder="Passing Marks" />
                                 <label asp-for="PassingMarks">Passing Marks</label>

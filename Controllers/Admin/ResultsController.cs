@@ -27,7 +27,6 @@ namespace CETExamApp.Controllers.Admin
         {
             var resultsQuery = _context.TestResults
                 .Include(tr => tr.Test)
-                .ThenInclude(t => t!.Subject)
                 .Include(tr => tr.Student)
                 .AsQueryable();
 
@@ -41,7 +40,7 @@ namespace CETExamApp.Controllers.Admin
                 .OrderByDescending(tr => tr.SubmittedAt)
                 .ToListAsync();
 
-            ViewData["TestId"] = new SelectList(await _context.Tests.Include(t => t.Subject).ToListAsync(), "Id", "Title", testId);
+            ViewData["TestId"] = new SelectList(await _context.Tests.ToListAsync(), "Id", "Title", testId);
             
             var students = await _context.Users.Where(u => u.GroupId != null).ToListAsync();
             ViewData["StudentId"] = new SelectList(students, "Id", "Email", studentId);
@@ -55,7 +54,6 @@ namespace CETExamApp.Controllers.Admin
 
             var result = await _context.TestResults
                 .Include(tr => tr.Test)
-                .ThenInclude(t => t!.Subject)
                 .Include(tr => tr.Student)
                 .Include(tr => tr.StudentAnswers)
                 .ThenInclude(sa => sa.Question)
@@ -71,7 +69,6 @@ namespace CETExamApp.Controllers.Admin
             if (id == null) return NotFound();
 
             var test = await _context.Tests
-                .Include(t => t.Subject)
                 .Include(t => t.Class)
                 .Include(t => t.TestResults)
                 .ThenInclude(tr => tr.Student)
@@ -103,7 +100,6 @@ namespace CETExamApp.Controllers.Admin
 
             var results = await _context.TestResults
                 .Include(tr => tr.Test)
-                .ThenInclude(t => t!.Subject)
                 .Where(tr => tr.StudentId == id)
                 .OrderByDescending(tr => tr.SubmittedAt)
                 .ToListAsync();
@@ -137,7 +133,6 @@ namespace CETExamApp.Controllers.Admin
 
             var results = await _context.TestResults
                 .Include(tr => tr.Test)
-                    .ThenInclude(t => t!.Subject)
                 .Include(tr => tr.StudentAnswers)
                     .ThenInclude(sa => sa.Question)
                         .ThenInclude(q => q!.Topic)
@@ -193,7 +188,7 @@ namespace CETExamApp.Controllers.Admin
             var subjectPerformance = new Dictionary<string, SubjectPerformance>();
             foreach (var result in results)
             {
-                var subjectName = result.Test?.Subject?.Name ?? "Unknown";
+                var subjectName = result.Test?.Class?.Name ?? "Unknown";
                 if (!subjectPerformance.ContainsKey(subjectName))
                 {
                     subjectPerformance[subjectName] = new SubjectPerformance { SubjectName = subjectName };
@@ -222,7 +217,6 @@ namespace CETExamApp.Controllers.Admin
             if (testId == null) return NotFound();
 
             var test = await _context.Tests
-                .Include(t => t.Subject)
                 .Include(t => t.TestQuestions)
                     .ThenInclude(tq => tq.Question)
                         .ThenInclude(q => q!.Topic)
@@ -278,9 +272,7 @@ namespace CETExamApp.Controllers.Admin
             if (testId == null) return NotFound();
 
             var test = await _context.Tests
-                .Include(t => t.Subject)
                 .Include(t => t.Class)
-                .Include(t => t.Group)
                 .Include(t => t.TestQuestions)
                     .ThenInclude(tq => tq.Question)
                         .ThenInclude(q => q!.Topic)
@@ -355,7 +347,6 @@ namespace CETExamApp.Controllers.Admin
 
             var testResult = await _context.TestResults
                 .Include(tr => tr.Test)
-                    .ThenInclude(t => t!.Subject)
                 .Include(tr => tr.Student)
                     .ThenInclude(s => s!.Class)
                 .Include(tr => tr.Student)
@@ -417,7 +408,6 @@ namespace CETExamApp.Controllers.Admin
 
             var results = await _context.TestResults
                 .Include(tr => tr.Test)
-                    .ThenInclude(t => t!.Subject)
                 .Where(tr => tr.StudentId == studentId)
                 .OrderBy(tr => tr.SubmittedAt)
                 .ToListAsync();
@@ -438,7 +428,7 @@ namespace CETExamApp.Controllers.Admin
             var subjectPerformance = new Dictionary<string, SubjectPerformance>();
             foreach (var result in results)
             {
-                var subjectName = result.Test?.Subject?.Name ?? "Unknown";
+                var subjectName = result.Test?.Class?.Name ?? "Unknown";
                 if (!subjectPerformance.ContainsKey(subjectName))
                 {
                     subjectPerformance[subjectName] = new SubjectPerformance { SubjectName = subjectName };
@@ -475,7 +465,6 @@ namespace CETExamApp.Controllers.Admin
 
             var results = await _context.TestResults
                 .Include(tr => tr.Test)
-                    .ThenInclude(t => t!.Subject)
                 .Where(tr => tr.StudentId == studentId)
                 .OrderBy(tr => tr.SubmittedAt)
                 .ToListAsync();
@@ -491,7 +480,6 @@ namespace CETExamApp.Controllers.Admin
             if (testId == null) return NotFound();
 
             var test = await _context.Tests
-                .Include(t => t.Subject)
                 .FirstOrDefaultAsync(t => t.Id == testId);
 
             if (test == null) return NotFound();
@@ -603,7 +591,7 @@ namespace CETExamApp.Controllers.Admin
                                 foreach (var result in results)
                                 {
                                     table.Cell().Element(CellStyle).Text(result.Test?.Title ?? "");
-                                    table.Cell().Element(CellStyle).Text(result.Test?.Subject?.Name ?? "");
+                                    table.Cell().Element(CellStyle).Text(result.Test?.Class?.Name ?? "");
                                     table.Cell().Element(CellStyle).Text(result.ObtainedMarks.ToString());
                                     table.Cell().Element(CellStyle).Text(result.TotalMarks.ToString());
                                     table.Cell().Element(CellStyle).Text(result.Percentage.ToString("0.00"));
@@ -695,7 +683,7 @@ namespace CETExamApp.Controllers.Admin
             worksheet.Cell(1, 1).Style.Font.FontSize = 16;
             
             worksheet.Cell(2, 1).Value = $"Test: {test.Title}";
-            worksheet.Cell(3, 1).Value = $"Subject: {test.Subject?.Name}";
+            worksheet.Cell(3, 1).Value = $"Class: {test.Class?.Name ?? "N/A"}";
             worksheet.Cell(4, 1).Value = $"Generated: {DateTime.Now:dd/MM/yyyy HH:mm}";
 
             // Column headers

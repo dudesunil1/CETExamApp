@@ -1,0 +1,1297 @@
+@model CETExamApp.Models.ViewModels.TestCreationWizardViewModel
+@{
+    ViewData["Title"] = "Create Test - Multi-Step Wizard";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4"><i class="bi bi-magic text-primary"></i> Create Test - Multi-Step Wizard</h2>
+            
+            <!-- Progress Steps -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-2 text-center">
+                            <div class="step-indicator active" data-step="1">
+                                <i class="bi bi-1-circle-fill text-primary"></i>
+                                <div class="step-label">Test Details</div>
+                            </div>
+                        </div>
+                        <div class="col-2 text-center">
+                            <div class="step-indicator" data-step="2">
+                                <i class="bi bi-2-circle text-muted"></i>
+                                <div class="step-label">Class & Subjects</div>
+                            </div>
+                        </div>
+                        <div class="col-2 text-center">
+                            <div class="step-indicator" data-step="3">
+                                <i class="bi bi-3-circle text-muted"></i>
+                                <div class="step-label">Questions</div>
+                            </div>
+                        </div>
+                        <div class="col-2 text-center">
+                            <div class="step-indicator" data-step="4">
+                                <i class="bi bi-4-circle text-muted"></i>
+                                <div class="step-label">Review</div>
+                            </div>
+                        </div>
+                        <div class="col-2 text-center">
+                            <div class="step-indicator" data-step="5">
+                                <i class="bi bi-5-circle text-muted"></i>
+                                <div class="step-label">Settings</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <style>
+                .step-indicator {
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    padding: 10px;
+                    border-radius: 8px;
+                    margin-bottom: 5px;
+                }
+                
+                .step-indicator:hover {
+                    background-color: rgba(0, 123, 255, 0.1);
+                    transform: translateY(-2px);
+                }
+                
+                .step-indicator.completed-step {
+                    cursor: pointer;
+                }
+                
+                .step-indicator.completed-step:hover {
+                    background-color: rgba(40, 167, 69, 0.1);
+                }
+                
+                .step-indicator.current-step {
+                    cursor: default;
+                }
+                
+                .step-indicator:not(.completed-step):not(.current-step) {
+                    cursor: not-allowed;
+                    opacity: 0.6;
+                }
+                
+                .step-indicator:not(.completed-step):not(.current-step):hover {
+                    background-color: transparent !important;
+                    transform: none !important;
+                }
+                
+                .step-label {
+                    font-size: 0.875rem;
+                    margin-top: 5px;
+                    transition: all 0.3s ease;
+                }
+                
+                .step-indicator i {
+                    font-size: 1.5rem;
+                    transition: all 0.3s ease;
+                }
+                
+                .step-indicator:hover i {
+                    transform: scale(1.1);
+                }
+            </style>
+        </div>
+    </div>
+
+    <form asp-action="CreateWizard" method="post" id="wizardForm">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        
+        <!-- Step 1: Test Details -->
+        <div id="step1" class="step-content">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Step 1: Test Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input asp-for="Title" class="form-control" placeholder="Test Name" />
+                                <label asp-for="Title">Test Name</label>
+                                <span asp-validation-for="Title" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input asp-for="DurationMinutes" class="form-control" type="number" min="1" max="1440" id="durationMinutes" />
+                                <label asp-for="DurationMinutes">Duration (Minutes)</label>
+                                <span asp-validation-for="DurationMinutes" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <textarea asp-for="Description" class="form-control" placeholder="Description" style="height: 100px"></textarea>
+                        <label asp-for="Description">Test Description (Optional)</label>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <input asp-for="TotalQuestions" class="form-control" type="number" min="1" max="500" id="totalQuestions" />
+                                <label asp-for="TotalQuestions">Total Questions</label>
+                                <span asp-validation-for="TotalQuestions" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <input asp-for="TotalMarks" class="form-control" type="number" min="1" max="1000" />
+                                <label asp-for="TotalMarks">Total Marks</label>
+                                <span asp-validation-for="TotalMarks" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <input asp-for="PassingMarks" class="form-control" type="number" min="0" max="1000" />
+                                <label asp-for="PassingMarks">Passing Marks</label>
+                                <span asp-validation-for="PassingMarks" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Class & Subject Configuration -->
+        <div id="step2" class="step-content" style="display: none;">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-book"></i> Step 2: Class & Subject Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select asp-for="ClassId" class="form-select" asp-items="ViewBag.ClassId" id="classSelect">
+                                    <option value="">-- Select Class --</option>
+                                </select>
+                                <label asp-for="ClassId">Class</label>
+                                <span asp-validation-for="ClassId" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="subjectsConfiguration" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Instructions:</strong> Enter the number of questions you want for each subject. You can leave some subjects as 0 if you don't want to include them in the test. At least one subject must have questions greater than 0.
+                        </div>
+                        <h6>Configure Number of Questions per Subject:</h6>
+                        <div id="subjectsTable"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Question Selection -->
+        <div id="step3" class="step-content" style="display: none;">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-question-circle"></i> Step 3: Question Selection</h5>
+                </div>
+                <div class="card-body">
+                    <div id="questionSelectionContainer">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading question selection...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Question Review -->
+        <div id="step4" class="step-content" style="display: none;">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-list-check"></i> Step 4: Question Review</h5>
+                </div>
+                <div class="card-body">
+                    <div id="questionReviewContainer"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 5: Final Settings -->
+        <div id="step5" class="step-content" style="display: none;">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-sliders"></i> Step 5: Final Settings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check mb-3">
+                                <input asp-for="ShuffleQuestions" class="form-check-input" />
+                                <label asp-for="ShuffleQuestions" class="form-check-label">
+                                    <strong>Shuffle Questions</strong>
+                                </label>
+                                <small class="text-muted d-block">Randomize question order for each student</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mb-3">
+                                <input asp-for="ShuffleOptionsPosition" class="form-check-input" />
+                                <label asp-for="ShuffleOptionsPosition" class="form-check-label">
+                                    <strong>Shuffle Options Position</strong>
+                                </label>
+                                <small class="text-muted d-block">Randomize option positions for each student</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">
+                <i class="bi bi-arrow-left"></i> Previous
+            </button>
+            <div>
+                <a asp-action="Index" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+                <button type="button" class="btn btn-primary" id="nextBtn">
+                    Next <i class="bi bi-arrow-right"></i>
+                </button>
+                <button type="submit" class="btn btn-success" id="submitBtn" style="display: none;">
+                    <i class="bi bi-check-circle"></i> Create Test
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        let currentStep = 1;
+        let classId = 0;
+        let subjects = [];
+        let subjectConfigs = {};
+        let selectedQuestions = {};
+        let currentSubjectIndex = 0;
+        let totalQuestionsFromStep1 = 20; // Track total questions from Step 1
+
+        $(document).ready(function() {
+            setupEventHandlers();
+            
+            // Initialize step indicators
+            updateStepIndicators();
+            updateNavigationButtons();
+        });
+
+
+        function setupEventHandlers() {
+            // Track total questions changes from Step 1
+            $('#totalQuestions').on('change input', function() {
+                totalQuestionsFromStep1 = parseInt($(this).val()) || 20;
+                // If we're on Step 2 and subjects are loaded, redistribute the questions
+                if (currentStep === 2 && subjects.length > 0) {
+                    redistributeQuestionsAcrossSubjects();
+                }
+            });
+            
+            // Class selection
+            $('#classSelect').change(function() {
+                classId = $(this).val();
+                if (classId) {
+                    loadSubjectsForClass(classId);
+                } else {
+                    $('#subjectsConfiguration').hide();
+                }
+            });
+
+            // Navigation
+            $('#nextBtn').click(nextStep);
+            $('#prevBtn').click(prevStep);
+            
+            // Step indicator clicks
+            $('.step-indicator').click(function() {
+                var targetStep = parseInt($(this).data('step'));
+                // Only allow clicking on current step or completed steps
+                if (targetStep <= currentStep) {
+                    goToStep(targetStep);
+                }
+            });
+        }
+
+
+        function loadSubjectsForClass(classId) {
+            $.ajax({
+                url: '@Url.Action("GetSubjectsForClass", "Tests")',
+                type: 'GET',
+                data: { classId: classId },
+                success: function(data) {
+                    subjects = data;
+                    displaySubjectsConfiguration(data);
+                    $('#subjectsConfiguration').show();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading subjects:', error);
+                    showNotification('Error loading subjects: ' + error, 'error');
+                }
+            });
+        }
+
+        function displaySubjectsConfiguration(subjects) {
+            var html = '<div class="table-responsive"><table class="table table-bordered">';
+            html += '<thead><tr><th>Subject</th><th>Number of Questions</th></tr></thead><tbody>';
+            
+            // Calculate questions per subject (evenly distributed)
+            var questionsPerSubject = Math.floor(totalQuestionsFromStep1 / subjects.length);
+            var remainingQuestions = totalQuestionsFromStep1 % subjects.length;
+            
+            subjects.forEach(function(subject, index) {
+                // Distribute remaining questions to first few subjects
+                var questionsForThisSubject = questionsPerSubject + (index < remainingQuestions ? 1 : 0);
+                
+                html += `
+                    <tr>
+                        <td><strong>${subject.name}</strong></td>
+                        <td>
+                            <input type="number" class="form-control subject-questions" 
+                                   data-subject-id="${subject.id}" 
+                                   data-subject-name="${subject.name}"
+                                   min="0" max="500" value="${questionsForThisSubject}" placeholder="Enter number of questions">
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table></div>';
+            html += `<div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Auto-distributed:</strong> ${totalQuestionsFromStep1} total questions distributed across ${subjects.length} subjects. You can adjust individual subject counts as needed.
+                    </div>`;
+            $('#subjectsTable').html(html);
+        }
+
+        function redistributeQuestionsAcrossSubjects() {
+            if (subjects.length === 0) return;
+            
+            // Calculate questions per subject (evenly distributed)
+            var questionsPerSubject = Math.floor(totalQuestionsFromStep1 / subjects.length);
+            var remainingQuestions = totalQuestionsFromStep1 % subjects.length;
+            
+            $('.subject-questions').each(function(index) {
+                var questionsForThisSubject = questionsPerSubject + (index < remainingQuestions ? 1 : 0);
+                $(this).val(questionsForThisSubject);
+            });
+            
+            // Update the info message
+            var infoMessage = $(`<div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Auto-distributed:</strong> ${totalQuestionsFromStep1} total questions distributed across ${subjects.length} subjects. You can adjust individual subject counts as needed.
+                    </div>`);
+            
+            // Remove existing info message and add new one
+            $('.alert-info').remove();
+            $('#subjectsTable').after(infoMessage);
+        }
+
+        function nextStep() {
+            if (currentStep < 5) {
+                goToStep(currentStep + 1);
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                goToStep(currentStep - 1);
+            }
+        }
+
+        function goToStep(targetStep) {
+            // Validate that we can go to the target step
+            if (targetStep < 1 || targetStep > 5) return;
+            
+            // For going backwards, no validation needed
+            // For going forwards, validate current step first
+            if (targetStep > currentStep) {
+                if (!validateCurrentStep()) {
+                    return;
+                }
+            }
+            
+            currentStep = targetStep;
+            showStep(currentStep);
+            updateStepIndicators();
+            updateNavigationButtons();
+        }
+
+        function showStep(step) {
+            $('.step-content').hide();
+            $(`#step${step}`).show();
+            
+            if (step === 2) {
+                collectSubjectConfigs();
+            } else if (step === 3) {
+                startQuestionSelection();
+            } else if (step === 4) {
+                showQuestionReview();
+            }
+        }
+
+        function updateStepIndicators() {
+            $('.step-indicator').each(function() {
+                var stepNum = parseInt($(this).data('step'));
+                var $icon = $(this).find('i');
+                var $label = $(this).find('.step-label');
+                
+                // Remove all classes
+                $icon.removeClass('bi-1-circle-fill bi-2-circle-fill bi-3-circle-fill bi-4-circle-fill bi-5-circle-fill text-primary text-success text-muted');
+                $icon.removeClass('bi-1-circle bi-2-circle bi-3-circle bi-4-circle bi-5-circle');
+                $label.removeClass('text-primary text-success text-muted fw-bold');
+                
+                if (stepNum < currentStep) {
+                    // Completed step
+                    $icon.addClass(`bi-${stepNum}-circle-fill text-success`);
+                    $label.addClass('text-success fw-bold');
+                    $(this).addClass('completed-step');
+                } else if (stepNum === currentStep) {
+                    // Current step
+                    $icon.addClass(`bi-${stepNum}-circle-fill text-primary`);
+                    $label.addClass('text-primary fw-bold');
+                    $(this).addClass('current-step');
+                } else {
+                    // Future step
+                    $icon.addClass(`bi-${stepNum}-circle text-muted`);
+                    $label.addClass('text-muted');
+                    $(this).removeClass('completed-step current-step');
+                }
+            });
+        }
+
+        function updateNavigationButtons() {
+            // Update Previous button
+            if (currentStep === 1) {
+                $('#prevBtn').hide();
+            } else {
+                $('#prevBtn').show();
+            }
+            
+            // Update Next/Submit buttons
+            if (currentStep < 5) {
+                $('#nextBtn').show();
+                $('#submitBtn').hide();
+            } else {
+                $('#nextBtn').hide();
+                $('#submitBtn').show();
+            }
+        }
+
+        function validateCurrentStep() {
+            if (currentStep === 1) {
+                return validateStep1();
+            } else if (currentStep === 2) {
+                return validateStep2();
+            }
+            return true;
+        }
+
+        function validateStep1() {
+            var title = $('#Title').val();
+            var duration = $('#durationMinutes').val();
+            var totalQuestions = $('#totalQuestions').val();
+            var totalMarks = $('#TotalMarks').val();
+            var passingMarks = $('#PassingMarks').val();
+
+            if (!title || !duration || !totalQuestions || !totalMarks || !passingMarks) {
+                showNotification('Please fill in all required fields', 'error');
+                return false;
+            }
+
+            if (parseInt(passingMarks) > parseInt(totalMarks)) {
+                showNotification('Passing marks cannot be greater than total marks', 'error');
+                return false;
+            }
+
+            // Update the global variable
+            totalQuestionsFromStep1 = parseInt(totalQuestions);
+
+            return true;
+        }
+
+        function validateStep2() {
+            var classSelected = $('#classSelect').val();
+            if (!classSelected) {
+                showNotification('Please select a class', 'error');
+                return false;
+            }
+
+            var totalQuestions = 0;
+            $('.subject-questions').each(function() {
+                var count = parseInt($(this).val()) || 0;
+                totalQuestions += count;
+            });
+
+            if (totalQuestions <= 0) {
+                showNotification('Please enter at least one question for at least one subject', 'error');
+                return false;
+            }
+
+            return true;
+        }
+
+        function collectSubjectConfigs() {
+            subjectConfigs = {};
+            
+            // Try to find subject inputs - they might be in different steps
+            var subjectInputs = $('.subject-questions');
+            
+            // If no inputs found in current view, try to find them in Step 2 specifically
+            if (subjectInputs.length === 0) {
+                subjectInputs = $('#step2 .subject-questions');
+            }
+            
+            subjectInputs.each(function() {
+                var subjectId = $(this).data('subject-id');
+                var subjectName = $(this).data('subject-name');
+                var count = parseInt($(this).val()) || 0;
+                
+                // Only include subjects with questions > 0
+                if (count > 0) {
+                    subjectConfigs[subjectId] = {
+                        subjectId: subjectId,
+                        subjectName: subjectName,
+                        numberOfQuestions: count
+                    };
+                }
+            });
+        }
+
+        function startQuestionSelection() {
+            currentSubjectIndex = 0;
+            
+            // Only reset selectedQuestions if it's truly empty (first time)
+            if (!selectedQuestions || Object.keys(selectedQuestions).length === 0) {
+                selectedQuestions = {};
+            }
+            
+            // Ensure subject configs are collected before starting question selection
+            collectSubjectConfigs();
+            
+            showSubjectQuestionSelection();
+        }
+
+        function showSubjectQuestionSelection() {
+            var subjectIds = Object.keys(subjectConfigs);
+            
+            // If no subjects are configured, show a message and allow user to go back
+            if (subjectIds.length === 0) {
+                var html = `
+                    <div class="alert alert-warning">
+                        <h5><i class="bi bi-exclamation-triangle"></i> No Subjects Selected</h5>
+                        <p>You haven't selected any questions for any subject yet. Please go back to Step 2 and enter the number of questions for at least one subject.</p>
+                        <p><small class="text-muted">Please go back to Step 2 and configure subjects.</small></p>
+                        <button type="button" class="btn btn-secondary" onclick="prevStep()">
+                            <i class="bi bi-arrow-left"></i> Go Back to Step 2
+                        </button>
+                        <button type="button" class="btn btn-outline-info ms-2" onclick="collectSubjectConfigs(); showSubjectQuestionSelection();">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+                `;
+                $('#questionSelectionContainer').html(html);
+                return;
+            }
+            
+            // Create subject dropdown and navigation interface
+            var html = `
+                <div class="question-selection-interface">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select id="subjectDropdown" class="form-select" onchange="onSubjectChange()">
+                                    <option value="">-- Select Subject --</option>
+                                </select>
+                                <label for="subjectDropdown">Choose Subject to Configure</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="subject-progress-info">
+                                <div class="alert alert-info mb-0">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>Progress:</strong> 
+                                    <span id="subjectProgressText">Select a subject to begin</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="subjectDetailsSection" style="display: none;">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0" id="selectedSubjectTitle">
+                                    <i class="bi bi-book"></i> <span id="selectedSubjectName"></span>
+                                </h6>
+                                <small class="text-muted" id="selectedSubjectInfo"></small>
+                            </div>
+                            <div class="card-body">
+                                <div id="topicSelectionArea"></div>
+                                <div id="questionSelectionArea" style="display: none;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-success" id="proceedToReviewBtn" style="display: none;" onclick="proceedToReview()">
+                            <i class="bi bi-check-circle"></i> Proceed to Question Review
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            $('#questionSelectionContainer').html(html);
+            populateSubjectDropdown();
+            updateSubjectProgress();
+        }
+
+        function populateSubjectDropdown() {
+            var dropdown = $('#subjectDropdown');
+            dropdown.empty();
+            dropdown.append('<option value="">-- Select Subject --</option>');
+            
+            var previouslySelectedSubject = $('#subjectDropdown').data('previously-selected');
+            var returnToSubject = $('#subjectDropdown').data('return-to-subject');
+            
+            Object.keys(subjectConfigs).forEach(function(subjectId) {
+                var config = subjectConfigs[subjectId];
+                var selectedCount = getSelectedQuestionCount(subjectId);
+                var statusText = selectedCount > 0 ? `(${selectedCount}/${config.numberOfQuestions} selected)` : '(Not started)';
+                
+                var option = $(`<option value="${subjectId}">${config.subjectName} ${statusText}</option>`);
+                
+                // Priority: return-to-subject > previously-selected
+                var shouldSelect = false;
+                if (returnToSubject && returnToSubject == subjectId) {
+                    option.prop('selected', true);
+                    shouldSelect = true;
+                } else if (previouslySelectedSubject && previouslySelectedSubject == subjectId) {
+                    option.prop('selected', true);
+                    shouldSelect = true;
+                }
+                
+                dropdown.append(option);
+            });
+            
+            // Clear the return-to-subject data after using it
+            if (returnToSubject) {
+                $('#subjectDropdown').removeData('return-to-subject');
+            }
+            
+            // If a subject was selected, trigger the change event
+            if ((returnToSubject || previouslySelectedSubject) && dropdown.val()) {
+                onSubjectChange();
+            }
+        }
+
+        function onSubjectChange() {
+            var selectedSubjectId = $('#subjectDropdown').val();
+            
+            // Store the currently selected subject for restoration later
+            $('#subjectDropdown').data('previously-selected', selectedSubjectId);
+            
+            if (!selectedSubjectId) {
+                $('#subjectDetailsSection').hide();
+                updateSubjectProgress();
+                return;
+            }
+            
+            var config = subjectConfigs[selectedSubjectId];
+            $('#selectedSubjectName').text(config.subjectName);
+            $('#selectedSubjectInfo').text(`Select ${config.numberOfQuestions} questions for this subject`);
+            $('#subjectDetailsSection').show();
+            
+            // Show topic selection area
+            showTopicSelection(selectedSubjectId);
+            updateSubjectProgress();
+        }
+
+        function showTopicSelection(subjectId) {
+            var config = subjectConfigs[subjectId];
+            var html = `
+                <div class="mb-3">
+                    <h6><i class="bi bi-list-ul"></i> Select Topics:</h6>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        Select one or more topics to load questions. You need to select ${config.numberOfQuestions} questions total for this subject.
+                    </div>
+                    <div id="topicsList_${subjectId}" class="row"></div>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-primary" onclick="loadQuestionsForSubject(${subjectId})">
+                            <i class="bi bi-search"></i> Load Questions from Selected Topics
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            $('#topicSelectionArea').html(html);
+            $('#questionSelectionArea').hide();
+            
+            // Load topics for this subject
+            loadTopicsForSubject(subjectId);
+        }
+
+        function updateSubjectProgress() {
+            var totalSubjects = Object.keys(subjectConfigs).length;
+            var completedSubjects = 0;
+            
+            Object.keys(subjectConfigs).forEach(function(subjectId) {
+                var config = subjectConfigs[subjectId];
+                var selectedCount = getSelectedQuestionCount(subjectId);
+                if (selectedCount >= config.numberOfQuestions) {
+                    completedSubjects++;
+                }
+            });
+            
+            var progressText = `${completedSubjects}/${totalSubjects} subjects completed`;
+            if (completedSubjects === totalSubjects) {
+                progressText += ' - Ready to proceed!';
+                $('#proceedToReviewBtn').show();
+            } else {
+                $('#proceedToReviewBtn').hide();
+            }
+            
+            $('#subjectProgressText').text(progressText);
+        }
+
+        function getSelectedQuestionCount(subjectId) {
+            if (!selectedQuestions[subjectId]) {
+                return 0;
+            }
+            return selectedQuestions[subjectId].length;
+        }
+
+        function proceedToReview() {
+            // Validate all subjects have required questions
+            var allComplete = true;
+            Object.keys(subjectConfigs).forEach(function(subjectId) {
+                var config = subjectConfigs[subjectId];
+                var selectedCount = getSelectedQuestionCount(subjectId);
+                if (selectedCount < config.numberOfQuestions) {
+                    allComplete = false;
+                }
+            });
+            
+            if (!allComplete) {
+                showNotification('Please complete question selection for all subjects before proceeding', 'error');
+                return;
+            }
+            
+            // Go to Step 4
+            currentStep = 4;
+            showStep(currentStep);
+            showQuestionReview();
+        }
+
+        function loadTopicsForSubject(subjectId) {
+            $.ajax({
+                url: '@Url.Action("GetTopicsForSubject", "Tests")',
+                type: 'GET',
+                data: { subjectId: subjectId, classId: classId },
+                success: function(topics) {
+                    displayTopicsTable(subjectId, topics);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading topics:', error);
+                }
+            });
+        }
+
+        function displayTopicsTable(subjectId, topics) {
+            var html = `
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="50">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllTopics_${subjectId}" onchange="toggleAllTopics(${subjectId})">
+                                        <label class="form-check-label" for="selectAllTopics_${subjectId}">
+                                            <strong>Select All</strong>
+                                        </label>
+                                    </div>
+                                </th>
+                                <th><strong>Topic Name</strong></th>
+                                <th width="120"><strong>Questions Available</strong></th>
+                                <th width="100"><strong>Action</strong></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            // Get previously selected topics for this subject
+            var previouslySelectedTopics = getPreviouslySelectedTopics(subjectId);
+            
+            if (topics.length === 0) {
+                html += `
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">
+                            <i class="bi bi-exclamation-circle"></i> No topics found for this subject.
+                        </td>
+                    </tr>
+                `;
+            } else {
+                topics.forEach(function(topic) {
+                    var isPreviouslySelected = previouslySelectedTopics.includes(topic.id.toString());
+                    
+                    html += `
+                        <tr>
+                            <td>
+                                <div class="form-check">
+                                    <input class="form-check-input topic-checkbox" type="checkbox" 
+                                           id="topic_${topic.id}" value="${topic.id}" data-topic-name="${topic.name}"
+                                           ${isPreviouslySelected ? 'checked' : ''}>
+                                    <label class="form-check-label" for="topic_${topic.id}"></label>
+                                </div>
+                            </td>
+                            <td>
+                                <strong>${topic.name}</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">${topic.questionCount || 'N/A'} questions</span>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="previewQuestionsForTopic(${topic.id}, '${topic.name}')">
+                                    <i class="bi bi-eye"></i> Preview
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            $(`#topicsList_${subjectId}`).html(html);
+            
+            // If returning from Step 4 and topics were previously selected, automatically load questions
+            var returnToSubject = $('#subjectDropdown').data('return-to-subject');
+            if (returnToSubject && previouslySelectedTopics.length > 0) {
+                setTimeout(function() {
+                    loadQuestionsForSubject(subjectId);
+                }, 500); // Small delay to ensure UI is ready
+            }
+        }
+
+        function getPreviouslySelectedTopics(subjectId) {
+            // Try to get previously selected topics from the DOM or a stored variable
+            var storedTopics = $(`#topicsList_${subjectId}`).data('selected-topics');
+            return storedTopics || [];
+        }
+
+        function storeSelectedTopics(subjectId) {
+            var selectedTopics = $(`#topicsList_${subjectId} .topic-checkbox:checked`).map(function() {
+                return $(this).val();
+            }).get();
+            $(`#topicsList_${subjectId}`).data('selected-topics', selectedTopics);
+        }
+
+        function toggleAllTopics(subjectId) {
+            var selectAll = $(`#selectAllTopics_${subjectId}`).prop('checked');
+            $(`.topic-checkbox`).prop('checked', selectAll);
+        }
+
+        function previewQuestionsForTopic(topicId, topicName) {
+            // This could show a modal with questions from this topic
+            showNotification(`Preview questions for topic: ${topicName}`, 'info');
+        }
+
+        function loadQuestionsForSubject(subjectId) {
+            // Store selected topics before loading questions
+            storeSelectedTopics(subjectId);
+            
+            var selectedTopics = $(`.topic-checkbox:checked`).map(function() {
+                return $(this).val();
+            }).get();
+            
+            if (selectedTopics.length === 0) {
+                showNotification('Please select at least one topic', 'error');
+                return;
+            }
+            
+            $.ajax({
+                url: '@Url.Action("GetQuestionsForTopics", "Tests")',
+                type: 'GET',
+                data: { topicIds: selectedTopics.join(',') },
+                success: function(questions) {
+                    displayQuestionsForSubject(subjectId, questions);
+                    $('#questionSelectionArea').show();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading questions:', error);
+                }
+            });
+        }
+
+        function displayQuestionsForSubject(subjectId, questions) {
+            var config = subjectConfigs[subjectId];
+            var requiredCount = config.numberOfQuestions;
+            var currentSelected = getSelectedQuestionCount(subjectId);
+            
+            // Store question details for later use in Step 4
+            storeQuestionDetails(subjectId, questions);
+            
+            var html = `
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6><i class="bi bi-question-circle"></i> Select Questions:</h6>
+                        <div>
+                            <span id="questionCounter_${subjectId}" class="badge bg-info">${currentSelected}/${requiredCount} selected</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="selectAllQuestions(${subjectId})">
+                                Select All
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselectAllQuestions(${subjectId})">
+                                Deselect All
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row" id="questionsContainer_${subjectId}">
+            `;
+            
+            questions.forEach(function(question) {
+                var isSelected = isQuestionSelected(subjectId, question.questionId);
+                html += `
+                    <div class="col-md-6 mb-3">
+                        <div class="card question-card ${isSelected ? 'border-success' : ''}" data-question-id="${question.questionId}">
+                            <div class="card-body">
+                                <div class="form-check">
+                                    <input class="form-check-input question-checkbox" type="checkbox" 
+                                           id="question_${question.questionId}" value="${question.questionId}" 
+                                           data-subject-id="${subjectId}" data-topic-name="${question.topicName}"
+                                           ${isSelected ? 'checked' : ''} onchange="onQuestionSelectionChange(${subjectId})">
+                                    <label class="form-check-label w-100" for="question_${question.questionId}">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <div class="question-text">${question.questionTextPreview}</div>
+                                                <div class="mt-2">
+                                                    <small class="text-muted">
+                                                        <span class="badge bg-secondary">${question.questionType}</span>
+                                                        <span class="badge bg-info">${question.difficultyLevel}</span>
+                                                        <span class="badge bg-warning">${question.marks} marks</span>
+                                                        <span class="badge bg-light text-dark">Topic: ${question.topicName}</span>
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+            
+            $('#questionSelectionArea').html(html);
+            updateQuestionCounter(subjectId);
+        }
+
+        function isQuestionSelected(subjectId, questionId) {
+            if (!selectedQuestions[subjectId]) {
+                return false;
+            }
+            return selectedQuestions[subjectId].includes(parseInt(questionId));
+        }
+
+        function onQuestionSelectionChange(subjectId) {
+            var selectedQuestionIds = $(`#questionsContainer_${subjectId} .question-checkbox:checked`).map(function() {
+                return parseInt($(this).val());
+            }).get();
+            
+            selectedQuestions[subjectId] = selectedQuestionIds;
+            updateQuestionCounter(subjectId);
+            updateSubjectProgress();
+            populateSubjectDropdown(); // Update dropdown with new counts
+        }
+
+        function updateQuestionCounter(subjectId) {
+            var config = subjectConfigs[subjectId];
+            var selected = getSelectedQuestionCount(subjectId);
+            var required = config.numberOfQuestions;
+            
+            var counter = $(`#questionCounter_${subjectId}`);
+            counter.text(`${selected}/${required} selected`);
+            
+            // Update badge color based on completion
+            counter.removeClass('bg-info bg-success bg-warning');
+            if (selected >= required) {
+                counter.addClass('bg-success');
+            } else if (selected > 0) {
+                counter.addClass('bg-warning');
+            } else {
+                counter.addClass('bg-info');
+            }
+        }
+
+        function selectAllQuestions(subjectId) {
+            $(`#questionsContainer_${subjectId} .question-checkbox`).prop('checked', true);
+            onQuestionSelectionChange(subjectId);
+        }
+
+        function deselectAllQuestions(subjectId) {
+            $(`#questionsContainer_${subjectId} .question-checkbox`).prop('checked', false);
+            onQuestionSelectionChange(subjectId);
+        }
+
+        function validateAndNextSubject(subjectId) {
+            var requiredCount = subjectConfigs[subjectId].numberOfQuestions;
+            var selectedCount = $(`.question-checkbox:checked`).length;
+            
+            if (selectedCount < requiredCount) {
+                showNotification(`Please select at least ${requiredCount} questions for ${subjectConfigs[subjectId].subjectName}`, 'error');
+                return;
+            }
+            
+            // Store selected questions
+            selectedQuestions[subjectId] = $(`.question-checkbox:checked`).map(function() {
+                return parseInt($(this).val());
+            }).get();
+            
+            currentSubjectIndex++;
+            showSubjectQuestionSelection();
+        }
+
+        function showQuestionReview() {
+            var html = `
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Question Review:</strong> Review your selected questions below. You can remove individual questions or add more questions for any subject.
+                </div>
+                
+                <div class="accordion" id="questionReviewAccordion">
+            `;
+            
+            var accordionIndex = 0;
+            Object.keys(subjectConfigs).forEach(function(subjectId) {
+                var config = subjectConfigs[subjectId];
+                var selected = selectedQuestions[subjectId] || [];
+                var accordionId = `subject_${subjectId}`;
+                var collapseId = `collapse_${subjectId}`;
+                
+                html += `
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading_${accordionIndex}">
+                            <button class="accordion-button collapsed" 
+                                    type="button" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#${collapseId}" 
+                                    aria-expanded="false" 
+                                    aria-controls="${collapseId}">
+                                <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                    <div>
+                                        <i class="bi bi-book me-2"></i>
+                                        <strong>${config.subjectName}</strong>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge ${selected.length >= config.numberOfQuestions ? 'bg-success' : selected.length > 0 ? 'bg-warning' : 'bg-danger'} me-3">
+                                            ${selected.length}/${config.numberOfQuestions} questions
+                                        </span>
+                                        <button type="button" class="btn btn-sm btn-primary" onclick="addMoreQuestions(${subjectId})">
+                                            <i class="bi bi-plus-circle"></i> Add/Select More Questions
+                                        </button>
+                                    </div>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="${collapseId}" 
+                             class="accordion-collapse collapse" 
+                             aria-labelledby="heading_${accordionIndex}" 
+                             data-bs-parent="#questionReviewAccordion">
+                            <div class="accordion-body">
+                `;
+                
+                if (selected.length === 0) {
+                    html += `
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>No questions selected for this subject.</strong>
+                            <p class="mb-0">Click "Add/Select More Questions" to select questions for ${config.subjectName}.</p>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="row">
+                    `;
+                    
+                    selected.forEach(function(questionId, index) {
+                        // We need to get question details from the previously loaded questions
+                        var questionDetails = getQuestionDetails(subjectId, questionId);
+                        if (questionDetails) {
+                            html += `
+                                <div class="col-md-6 mb-3">
+                                    <div class="card border-success">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="card-title">Question ${index + 1}</h6>
+                                                    <p class="card-text">${questionDetails.questionTextPreview}</p>
+                                                    <div class="mt-2">
+                                                        <span class="badge bg-secondary">${questionDetails.questionType}</span>
+                                                        <span class="badge bg-info">${questionDetails.difficultyLevel}</span>
+                                                        <span class="badge bg-warning">${questionDetails.marks} marks</span>
+                                                        <span class="badge bg-light text-dark">Topic: ${questionDetails.topicName}</span>
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestionFromSelection(${subjectId}, ${questionId})">
+                                                    <i class="bi bi-trash"></i> Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                    
+                    html += `</div>`;
+                }
+                
+                html += `
+                            </div>
+                        </div>
+                    </div>
+                `;
+                accordionIndex++;
+            });
+            
+            html += `</div>`;
+            $('#questionReviewContainer').html(html);
+        }
+
+        function editSubjectQuestions(subjectId) {
+            currentSubjectIndex = Object.keys(subjectConfigs).indexOf(subjectId.toString());
+            showSubjectQuestionSelection();
+        }
+
+        function removeSubjectQuestions(subjectId) {
+            delete selectedQuestions[subjectId];
+            showQuestionReview();
+        }
+
+        // Store question details for later retrieval
+        let questionDetailsStore = {};
+
+        function getQuestionDetails(subjectId, questionId) {
+            if (questionDetailsStore[subjectId] && questionDetailsStore[subjectId][questionId]) {
+                return questionDetailsStore[subjectId][questionId];
+            }
+            return null;
+        }
+
+        function storeQuestionDetails(subjectId, questions) {
+            if (!questionDetailsStore[subjectId]) {
+                questionDetailsStore[subjectId] = {};
+            }
+            questions.forEach(function(question) {
+                questionDetailsStore[subjectId][question.questionId] = question;
+            });
+        }
+
+        function addMoreQuestions(subjectId) {
+            // Store the subject ID to return to Step 3 with this subject selected
+            $('#subjectDropdown').data('return-to-subject', subjectId);
+            
+            // Go back to Step 3
+            currentStep = 3;
+            showStep(currentStep);
+            startQuestionSelection();
+        }
+
+        function removeQuestionFromSelection(subjectId, questionId) {
+            if (selectedQuestions[subjectId]) {
+                selectedQuestions[subjectId] = selectedQuestions[subjectId].filter(id => id !== questionId);
+                showQuestionReview(); // Refresh the display
+                showNotification('Question removed from selection', 'success');
+            }
+        }
+
+        function showNotification(message, type) {
+            var alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+            var notification = $('<div class="alert ' + alertClass + ' alert-dismissible fade show" role="alert">' +
+                message +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                '</div>');
+            
+            $('body').prepend(notification);
+            
+            setTimeout(function() {
+                notification.alert('close');
+            }, 5000);
+        }
+    </script>
+
+    <style>
+        .step-indicator {
+            margin-bottom: 10px;
+        }
+        .step-indicator i {
+            font-size: 2rem;
+        }
+        .step-indicator.active {
+            color: #0d6efd !important;
+        }
+        .step-indicator.completed {
+            color: #198754 !important;
+        }
+        .step-label {
+            font-size: 0.875rem;
+            margin-top: 5px;
+        }
+        .question-card {
+            transition: border-color 0.15s ease-in-out;
+        }
+        .question-card:hover {
+            border-color: #0d6efd !important;
+        }
+        
+        /* Custom styling for Question Review accordion headers */
+        #questionReviewAccordion .accordion-button {
+            background-color: #e3f2fd !important; /* Light blue background */
+            border-color: #bbdefb !important;
+            color: #1976d2 !important; /* Darker blue text */
+            font-weight: 600 !important;
+        }
+        
+        #questionReviewAccordion .accordion-button:not(.collapsed) {
+            background-color: #e3f2fd !important; /* Same background when expanded */
+            border-color: #bbdefb !important;
+            color: #1976d2 !important;
+            box-shadow: none !important;
+        }
+        
+        #questionReviewAccordion .accordion-button:focus {
+            box-shadow: 0 0 0 0.25rem rgba(25, 118, 210, 0.25) !important;
+            border-color: #bbdefb !important;
+        }
+        
+        #questionReviewAccordion .accordion-button::after {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%231976d2'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e") !important;
+        }
+        
+        #questionReviewAccordion .accordion-button:not(.collapsed)::after {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%231976d2'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e") !important;
+        }
+    </style>
+}

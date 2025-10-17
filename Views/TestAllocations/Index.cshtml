@@ -74,7 +74,7 @@
                     {
                         <tr>
                             <td>@item.Test?.Title</td>
-                            <td>@item.Test?.Subject?.Name</td>
+                            <td>@item.Test?.Class?.Name</td>
                             <td>@item.Student?.FirstName @item.Student?.LastName</td>
                             <td>@item.AllocatedDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
                             <td>@(item.ScheduledStartTime?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Not Set")</td>

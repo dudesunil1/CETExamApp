@@ -1,6 +1,8 @@
 using CETExamApp.Data;
 using CETExamApp.Models;
+using CETExamApp.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -11,18 +13,20 @@ namespace CETExamApp.Controllers.Admin
     public class TestsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ILogger<TestsController> _logger;
 
-        public TestsController(ApplicationDbContext context)
+        public TestsController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, ILogger<TestsController> logger)
         {
             _context = context;
+            _userManager = userManager;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index()
         {
             var tests = await _context.Tests
-                .Include(t => t.Subject)
                 .Include(t => t.Class)
-                .Include(t => t.Group)
                 .Include(t => t.TestQuestions)
                 .OrderByDescending(t => t.CreatedDate)
                 .ToListAsync();
@@ -31,10 +35,88 @@ namespace CETExamApp.Controllers.Admin
 
         public async Task<IActionResult> Create()
         {
-            ViewData["SubjectId"] = new SelectList(await _context.Subjects.Where(s => s.IsActive).ToListAsync(), "Id", "Name");
             ViewData["ClassId"] = new SelectList(await _context.Classes.Where(c => c.IsActive).ToListAsync(), "Id", "Name");
-            ViewData["GroupId"] = new SelectList(await _context.Groups.Where(g => g.IsActive).Include(g => g.Class).ToListAsync(), "Id", "Name");
             return View();
+        }
+
+        // Multi-Step Wizard Actions
+        public async Task<IActionResult> CreateWizard()
+        {
+            var model = new TestCreationWizardViewModel
+            {
+                DurationMinutes = 60,
+                TotalQuestions = 20,
+                TotalMarks = 100,
+                PassingMarks = 50
+            };
+
+            ViewData["ClassId"] = new SelectList(await _context.Classes.Where(c => c.IsActive).ToListAsync(), "Id", "Name");
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateWizard(TestCreationWizardViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                // No need to set SubjectId or GroupId as they are removed from the model
+                
+                var test = new Test
+                {
+                    Title = model.Title,
+                    Description = model.Description,
+                    DurationMinutes = model.DurationMinutes,
+                    TotalMarks = model.TotalMarks,
+                    PassingMarks = model.PassingMarks,
+                    ClassId = model.ClassId,
+                    ShuffleQuestions = model.ShuffleQuestions,
+                    ShowResultsImmediately = true,
+                    AllowLateSubmission = false,
+                    Status = model.Status,
+                    CreatedDate = DateTime.UtcNow,
+                    CreatedBy = User.Identity?.Name
+                };
+
+                _context.Tests.Add(test);
+                await _context.SaveChangesAsync();
+
+                // Save subject configurations and questions
+                await SaveTestQuestions(test.Id, model.SelectedQuestionsBySubject, model.SubjectConfigs);
+
+                TempData["Success"] = "Test created successfully!";
+                return RedirectToAction("Index");
+            }
+
+            ViewData["ClassId"] = new SelectList(await _context.Classes.Where(c => c.IsActive).ToListAsync(), "Id", "Name");
+            return View(model);
+        }
+
+        private async Task SaveTestQuestions(int testId, Dictionary<int, List<int>> selectedQuestions, List<SubjectConfigViewModel> subjectConfigs)
+        {
+            var order = 1;
+            foreach (var kvp in selectedQuestions)
+            {
+                var subjectId = kvp.Key;
+                var questionIds = kvp.Value;
+
+                // SubjectId is already set correctly in the test, no need to update it here
+
+                foreach (var questionId in questionIds)
+                {
+                    var testQuestion = new TestQuestion
+                    {
+                        TestId = testId,
+                        QuestionId = questionId,
+                        QuestionOrder = order++,
+                        Marks = 1 // Default marks, can be customized later
+                    };
+
+                    _context.TestQuestions.Add(testQuestion);
+                }
+            }
+
+            await _context.SaveChangesAsync();
         }
 
         [HttpPost]
@@ -46,26 +128,12 @@ namespace CETExamApp.Controllers.Admin
                 test.CreatedDate = DateTime.UtcNow;
                 test.CreatedBy = User.Identity?.Name;
                 
-                // Convert local time to UTC for storage
-                if (test.StartDateTime.HasValue)
-                    test.StartDateTime = test.StartDateTime.Value.ToUniversalTime();
-                if (test.EndDateTime.HasValue)
-                    test.EndDateTime = test.EndDateTime.Value.ToUniversalTime();
-                
                 _context.Tests.Add(test);
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Test created successfully! Now add questions to the test.";
                 return RedirectToAction(nameof(AddQuestions), new { id = test.Id });
             }
-            ViewData["SubjectId"] = new SelectList(await _context.Subjects.Where(s => s.IsActive).ToListAsync(), "Id", "Name", test.SubjectId);
             ViewData["ClassId"] = new SelectList(await _context.Classes.Where(c => c.IsActive).ToListAsync(), "Id", "Name", test.ClassId);
-            ViewData["GroupId"] = new SelectList(await _context.Groups.Where(g => g.IsActive).Include(g => g.Class).ToListAsync(), "Id", "Name", test.GroupId);
-            
-            // Get topics for the selected subject
-            var topics = await _context.Topics
-                .Where(t => t.SubjectId == test.SubjectId && t.IsActive)
-                .ToListAsync();
-            ViewData["Topics"] = new SelectList(topics, "Id", "Name");
             
             return View(test);
         }
@@ -77,9 +145,7 @@ namespace CETExamApp.Controllers.Admin
             var test = await _context.Tests.FindAsync(id);
             if (test == null) return NotFound();
 
-            ViewData["SubjectId"] = new SelectList(await _context.Subjects.Where(s => s.IsActive).ToListAsync(), "Id", "Name", test.SubjectId);
             ViewData["ClassId"] = new SelectList(await _context.Classes.Where(c => c.IsActive).ToListAsync(), "Id", "Name", test.ClassId);
-            ViewData["GroupId"] = new SelectList(await _context.Groups.Where(g => g.IsActive).Include(g => g.Class).ToListAsync(), "Id", "Name", test.GroupId);
             return View(test);
         }
 
@@ -93,12 +159,6 @@ namespace CETExamApp.Controllers.Admin
             {
                 try
                 {
-                    // Convert local time to UTC for storage
-                    if (test.StartDateTime.HasValue)
-                        test.StartDateTime = test.StartDateTime.Value.ToUniversalTime();
-                    if (test.EndDateTime.HasValue)
-                        test.EndDateTime = test.EndDateTime.Value.ToUniversalTime();
-                    
                     _context.Update(test);
                     await _context.SaveChangesAsync();
                     TempData["Success"] = "Test updated successfully!";
@@ -112,9 +172,7 @@ namespace CETExamApp.Controllers.Admin
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["SubjectId"] = new SelectList(await _context.Subjects.Where(s => s.IsActive).ToListAsync(), "Id", "Name", test.SubjectId);
             ViewData["ClassId"] = new SelectList(await _context.Classes.Where(c => c.IsActive).ToListAsync(), "Id", "Name", test.ClassId);
-            ViewData["GroupId"] = new SelectList(await _context.Groups.Where(g => g.IsActive).Include(g => g.Class).ToListAsync(), "Id", "Name", test.GroupId);
             return View(test);
         }
 
@@ -123,8 +181,6 @@ namespace CETExamApp.Controllers.Admin
             if (id == null) return NotFound();
 
             var test = await _context.Tests
-                .Include(t => t.Subject)
-                .Include(t => t.Group)
                 .Include(t => t.TestQuestions)
                 .ThenInclude(tq => tq.Question)
                     .ThenInclude(q => q!.Topic)
@@ -132,15 +188,15 @@ namespace CETExamApp.Controllers.Admin
 
             if (test == null) return NotFound();
 
-            // Get topics for the test's subject
+            // Get all topics for the test's class
             var topics = await _context.Topics
-                .Where(t => t.SubjectId == test.SubjectId && t.IsActive)
+                .Where(t => t.ClassId == test.ClassId && t.IsActive)
                 .ToListAsync();
 
             // Get available questions - filter by topic if selected
             var availableQuestionsQuery = _context.Questions
                 .Include(q => q.Topic)
-                .Where(q => q.Topic!.SubjectId == test.SubjectId && q.IsActive);
+                .Where(q => q.Topic!.ClassId == test.ClassId && q.IsActive);
 
             if (topicId.HasValue)
                 availableQuestionsQuery = availableQuestionsQuery.Where(q => q.TopicId == topicId.Value);
@@ -205,7 +261,6 @@ namespace CETExamApp.Controllers.Admin
             if (id == null) return NotFound();
 
             var test = await _context.Tests
-                .Include(t => t.Subject)
                 .Include(t => t.Class)
                 .Include(t => t.TestQuestions)
                 .ThenInclude(tq => tq.Question)
@@ -220,7 +275,6 @@ namespace CETExamApp.Controllers.Admin
             if (id == null) return NotFound();
 
             var test = await _context.Tests
-                .Include(t => t.Subject)
                 .Include(t => t.Class)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (test == null) return NotFound();
@@ -245,6 +299,368 @@ namespace CETExamApp.Controllers.Admin
         private async Task<bool> TestExists(int id)
         {
             return await _context.Tests.AnyAsync(e => e.Id == id);
+        }
+
+        // AJAX Endpoints for Multi-Step Wizard
+        [HttpGet]
+        public async Task<IActionResult> GetSubjectsForClass(int classId)
+        {
+            try
+            {
+                var subjects = await _context.Topics
+                    .Where(t => t.ClassId == classId && t.IsActive)
+                    .Include(t => t.Subject)
+                    .Select(t => t.Subject)
+                    .Distinct()
+                    .Where(s => s.IsActive)
+                    .Select(s => new { id = s.Id, name = s.Name })
+                    .ToListAsync();
+
+                return Json(subjects);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting subjects for class");
+                return Json(new List<object>());
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetTopicsForSubject(int subjectId, int classId)
+        {
+            try
+            {
+                var topics = await _context.Topics
+                    .Where(t => t.SubjectId == subjectId && t.ClassId == classId && t.IsActive)
+                    .Select(t => new { id = t.Id, name = t.Name })
+                    .ToListAsync();
+
+                return Json(topics);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting topics for subject");
+                return Json(new List<object>());
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetQuestionsForTopics(string topicIds)
+        {
+            try
+            {
+                var topicIdList = topicIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(int.Parse)
+                    .ToList();
+
+                var questions = await _context.Questions
+                    .Include(q => q.Topic)
+                    .Where(q => topicIdList.Contains(q.TopicId) && q.IsActive)
+                    .Select(q => new QuestionSelectionViewModel
+                    {
+                        QuestionId = q.Id,
+                        QuestionTextPreview = q.QuestionText ?? "",
+                        QuestionType = q.QuestionType.ToString(),
+                        DifficultyLevel = q.DifficultyLevel.ToString(),
+                        Marks = q.Marks,
+                        TopicId = q.TopicId,
+                        TopicName = q.Topic!.Name
+                    })
+                    .ToListAsync();
+
+                // Strip HTML tags from question text for display
+                foreach (var question in questions)
+                {
+                    question.QuestionTextPreview = System.Text.RegularExpressions.Regex.Replace(
+                        question.QuestionTextPreview, "<.*?>", string.Empty);
+                    if (question.QuestionTextPreview.Length > 100)
+                    {
+                        question.QuestionTextPreview = question.QuestionTextPreview.Substring(0, 100) + "...";
+                    }
+                }
+
+                return Json(questions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting questions for topics");
+                return Json(new List<object>());
+            }
+        }
+
+        // AJAX Endpoints for Enhanced Functionality
+
+        [HttpGet]
+        public async Task<IActionResult> GetGroupsByClass(int classId)
+        {
+            try
+            {
+                var groups = await _context.Groups
+                    .Where(g => g.ClassId == classId && g.IsActive)
+                    .Select(g => new { id = g.Id, name = g.Name })
+                    .ToListAsync();
+
+                return Json(groups);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting groups by class");
+                return Json(new List<object>());
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetSubjectsByGroup(int classId, int groupId)
+        {
+            try
+            {
+                // Get the group to determine which subjects it includes
+                var group = await _context.Groups.FindAsync(groupId);
+                if (group == null) return Json(new List<object>());
+
+                var subjects = new List<object>();
+
+                // Map group names to subjects
+                if (group.Name.Contains("Physics"))
+                    subjects.Add(new { id = GetSubjectIdByName("Physics"), name = "Physics" });
+                if (group.Name.Contains("Chemistry"))
+                    subjects.Add(new { id = GetSubjectIdByName("Chemistry"), name = "Chemistry" });
+                if (group.Name.Contains("Math"))
+                    subjects.Add(new { id = GetSubjectIdByName("Maths"), name = "Maths" });
+                if (group.Name.Contains("Biology"))
+                    subjects.Add(new { id = GetSubjectIdByName("Biology"), name = "Biology" });
+
+                return Json(subjects);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting subjects by group");
+                return Json(new List<object>());
+            }
+        }
+
+        private int GetSubjectIdByName(string subjectName)
+        {
+            // This is a helper method to get subject ID by name
+            // In a real scenario, you might want to cache this or make it async
+            var subject = _context.Subjects.FirstOrDefault(s => s.Name == subjectName);
+            return subject?.Id ?? 0;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetSubjectsByClass(int classId)
+        {
+            try
+            {
+                var subjects = await _context.Topics
+                    .Where(t => t.ClassId == classId && t.IsActive)
+                    .Include(t => t.Subject)
+                    .Select(t => t.Subject)
+                    .Distinct()
+                    .Where(s => s.IsActive)
+                    .Select(s => new { id = s.Id, name = s.Name })
+                    .ToListAsync();
+
+                return Json(subjects);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting subjects by class");
+                return Json(new List<object>());
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetTopicsBySubject(int subjectId, int classId)
+        {
+            try
+            {
+                var topics = await _context.Topics
+                    .Where(t => t.SubjectId == subjectId && t.ClassId == classId && t.IsActive)
+                    .Select(t => new { id = t.Id, name = t.Name })
+                    .ToListAsync();
+
+                return Json(topics);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting topics by subject");
+                return Json(new List<object>());
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetQuestionsByTopics(string topicIds, int? subjectId = null, int requiredCount = 0)
+        {
+            try
+            {
+                var topicIdList = topicIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(int.Parse)
+                    .ToList();
+
+                var questions = await _context.Questions
+                    .Include(q => q.Topic)
+                    .Where(q => topicIdList.Contains(q.TopicId) && q.IsActive)
+                    .Select(q => new QuestionSelectionViewModel
+                    {
+                        QuestionId = q.Id,
+                        QuestionTextPreview = q.QuestionText ?? "",
+                        QuestionType = q.QuestionType.ToString(),
+                        DifficultyLevel = q.DifficultyLevel.ToString(),
+                        Marks = q.Marks,
+                        TopicId = q.TopicId,
+                        TopicName = q.Topic!.Name
+                    })
+                    .ToListAsync();
+
+                // Strip HTML tags from question text for display
+                foreach (var question in questions)
+                {
+                    question.QuestionTextPreview = System.Text.RegularExpressions.Regex.Replace(
+                        question.QuestionTextPreview, "<.*?>", string.Empty);
+                    if (question.QuestionTextPreview.Length > 100)
+                    {
+                        question.QuestionTextPreview = question.QuestionTextPreview.Substring(0, 100) + "...";
+                    }
+                }
+
+                return Json(new
+                {
+                    questions = questions,
+                    totalCount = questions.Count,
+                    requiredCount = requiredCount,
+                    canProceed = requiredCount == 0 || questions.Count >= requiredCount
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting questions by topics");
+                return Json(new { questions = new List<object>(), totalCount = 0, requiredCount = 0, canProceed = false });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetStudentsByGroup(int groupId)
+        {
+            try
+            {
+                var students = await _userManager.GetUsersInRoleAsync("Student");
+                var studentsInGroup = students
+                    .Where(s => s.GroupId == groupId)
+                    .Select(s => new StudentSelectionViewModel
+                    {
+                        StudentId = s.Id,
+                        StudentName = $"{s.FirstName} {s.LastName}".Trim(),
+                        IsSelected = false
+                    })
+                    .ToList();
+
+                return Json(studentsInGroup);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting students by group");
+                return Json(new List<object>());
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveMultiSubjectQuestionSelection(int testId, string subjectQuestionsData)
+        {
+            try
+            {
+                var subjectQuestions = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, List<int>>>(subjectQuestionsData);
+                
+                // Clear existing questions for this test
+                var existingQuestions = await _context.TestQuestions
+                    .Where(tq => tq.TestId == testId)
+                    .ToListAsync();
+                
+                _context.TestQuestions.RemoveRange(existingQuestions);
+                
+                // Add new question selections
+                var order = 1;
+                foreach (var kvp in subjectQuestions)
+                {
+                    var questionIds = kvp.Value;
+                    
+                    foreach (var questionId in questionIds)
+                    {
+                        var testQuestion = new TestQuestion
+                        {
+                            TestId = testId,
+                            QuestionId = questionId,
+                            QuestionOrder = order++,
+                            Marks = 1 // Default marks, can be customized later
+                        };
+                        
+                        _context.TestQuestions.Add(testQuestion);
+                    }
+                }
+                
+                await _context.SaveChangesAsync();
+                
+                return Json(new { success = true, redirectUrl = Url.Action("StudentAllocation", new { id = testId }) });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving multi-subject question selection");
+                return Json(new { success = false, error = ex.Message });
+            }
+        }
+
+        public async Task<IActionResult> StudentAllocation(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var test = await _context.Tests
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (test == null) return NotFound();
+
+            ViewBag.Test = test;
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AllocateStudents(int testId, List<string> selectedStudentIds)
+        {
+            try
+            {
+                // Clear existing allocations for this test
+                var existingAllocations = await _context.TestAllocations
+                    .Where(ta => ta.TestId == testId)
+                    .ToListAsync();
+                
+                _context.TestAllocations.RemoveRange(existingAllocations);
+                
+                // Add new allocations
+                foreach (var studentId in selectedStudentIds)
+                {
+                    var allocation = new TestAllocation
+                    {
+                        TestId = testId,
+                        StudentId = studentId,
+                        ScheduledStartTime = DateTime.UtcNow.AddHours(1), // Default to 1 hour ahead
+                        ScheduledEndTime = DateTime.UtcNow.AddHours(2), // Default to 2 hours ahead
+                        AllocatedBy = User.Identity?.Name,
+                        AllocatedDate = DateTime.UtcNow
+                    };
+                    
+                    _context.TestAllocations.Add(allocation);
+                }
+                
+                await _context.SaveChangesAsync();
+                
+                TempData["Success"] = $"Test allocated to {selectedStudentIds.Count} students successfully!";
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error allocating students to test");
+                TempData["Error"] = "Error allocating students to test: " + ex.Message;
+                return RedirectToAction("StudentAllocation", new { id = testId });
+            }
         }
     }
 }

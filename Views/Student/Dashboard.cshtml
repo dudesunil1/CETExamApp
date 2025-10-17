@@ -95,7 +95,7 @@
                     {
                         <div class="alert alert-warning d-flex justify-content-between align-items-center">
                             <div>
-                                <strong>@attempt.Test?.Title</strong> (@attempt.Test?.Subject?.Name)
+                                <strong>@attempt.Test?.Title</strong> (@attempt.Test?.Class?.Name)
                                 <br/>
                                 <small>Started: @attempt.StartedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small>
                             </div>
@@ -141,7 +141,7 @@
                                     
                                     <tr>
                                         <td><strong>@allocation.Test?.Title</strong></td>
-                                        <td><span class="badge bg-info">@allocation.Test?.Subject?.Name</span></td>
+                                        <td><span class="badge bg-info">@allocation.Test?.Class?.Name</span></td>
                                         <td>@allocation.Test?.TestQuestions?.Count</td>
                                         <td>@allocation.Test?.DurationMinutes min</td>
                                         <td>
@@ -233,7 +233,7 @@
                                 {
                                     <tr>
                                         <td><strong>@result.Test?.Title</strong></td>
-                                        <td><span class="badge bg-info">@result.Test?.Subject?.Name</span></td>
+                                        <td><span class="badge bg-info">@result.Test?.Class?.Name</span></td>
                                         <td>@result.SubmittedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
                                         <td>@result.ObtainedMarks / @result.TotalMarks</td>
                                         <td>@result.Percentage.ToString("0.00")%</td>

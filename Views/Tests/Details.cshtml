@@ -14,22 +14,11 @@
                 <h5 class="mb-3">@Model.Title</h5>
                 
                 <div class="row mb-3">
-                    <div class="col-md-4">
-                        <strong>Subject:</strong> @Model.Subject?.Name
-                    </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <strong>Class:</strong> @(Model.Class?.Name ?? "All Classes")
                     </div>
-                    <div class="col-md-4">
-                        <strong>Group:</strong> 
-                        @if (Model.Group != null)
-                        {
-                            <span class="badge bg-warning">@Model.Group.Name</span>
-                        }
-                        else
-                        {
-                            <span class="text-muted">All Groups</span>
-                        }
+                    <div class="col-md-6">
+                        <strong>Duration:</strong> @Model.DurationMinutes minutes
                     </div>
                 </div>
 
@@ -74,14 +63,6 @@
                     </div>
                 </div>
 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Start Date & Time:</strong> @(Model.StartDateTime?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Not set")
-                    </div>
-                    <div class="col-md-6">
-                        <strong>End Date & Time:</strong> @(Model.EndDateTime?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Not set")
-                    </div>
-                </div>
 
                 <hr />
 

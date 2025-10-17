@@ -1,0 +1,218 @@
+@{
+    ViewData["Title"] = "Allocate Students";
+    var test = ViewBag.Test as CETExamApp.Models.Test;
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4"><i class="bi bi-people text-primary"></i> Allocate Students to Test</h2>
+            <h5 class="text-muted">@test?.Title</h5>
+            
+            <!-- Test Info -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-book"></i> Class: @test?.Class?.Name</h6>
+                            <h6><i class="bi bi-clock"></i> Duration: @test?.DurationMinutes min</h6>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-star"></i> Total Marks: @test?.TotalMarks</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <!-- Student Selection -->
+            <div id="studentSelection">
+                <h5><i class="bi bi-people"></i> Select Students</h5>
+                <p class="text-muted">Choose which students will take this test.</p>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span id="studentCounter" class="badge bg-info">0 students selected</span>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="selectAllStudentsBtn">
+                                <i class="bi bi-check-square"></i> Select All
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllStudentsBtn">
+                                <i class="bi bi-square"></i> Deselect All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="studentsList"></div>
+                
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-between mt-4">
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Tests
+                    </a>
+                    <button type="button" class="btn btn-success" id="allocateStudentsBtn" disabled>
+                        <i class="bi bi-check"></i> Allocate Selected Students
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let testId = @test?.Id;
+        let classId = @test?.ClassId;
+        let selectedStudents = [];
+
+        $(document).ready(function() {
+            loadStudents();
+            setupEventHandlers();
+        });
+
+        function setupEventHandlers() {
+            $('#selectAllStudentsBtn').click(selectAllStudents);
+            $('#deselectAllStudentsBtn').click(deselectAllStudents);
+            $('#allocateStudentsBtn').click(allocateStudents);
+        }
+
+        function loadStudents() {
+            if (!groupId) {
+                $('#studentsList').html('<div class="alert alert-warning">No group assigned to this test.</div>');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("GetStudentsByGroup", "Tests")',
+                type: 'GET',
+                data: { groupId: groupId },
+                success: function(data) {
+                    if (data && data.length > 0) {
+                        displayStudents(data);
+                    } else {
+                        $('#studentsList').html('<div class="alert alert-warning">No students found in the selected group.</div>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading students:', error);
+                    showNotification('Error loading students: ' + error, 'error');
+                    $('#studentsList').empty();
+                }
+            });
+        }
+
+        function displayStudents(students) {
+            var studentsHtml = '<div class="row">';
+            
+            $.each(students, function(i, student) {
+                studentsHtml += `
+                    <div class="col-md-6 mb-3">
+                        <div class="card student-card">
+                            <div class="card-body">
+                                <div class="form-check">
+                                    <input class="form-check-input student-checkbox" 
+                                           type="checkbox" 
+                                           value="${student.studentId}" 
+                                           id="student_${student.studentId}">
+                                    <label class="form-check-label" for="student_${student.studentId}">
+                                        <strong>${student.studentName}</strong>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            studentsHtml += '</div>';
+            $('#studentsList').html(studentsHtml);
+            
+            // Add event handlers
+            $('.student-checkbox').change(function() {
+                updateSelectedStudents();
+                updateStudentCounter();
+            });
+        }
+
+        function updateSelectedStudents() {
+            selectedStudents = $('.student-checkbox:checked').map(function() {
+                return $(this).val();
+            }).get();
+            
+            // Update card styling
+            $('.student-card').removeClass('border-primary');
+            $('.student-checkbox:checked').closest('.student-card').addClass('border-primary');
+        }
+
+        function updateStudentCounter() {
+            $('#studentCounter').text(`${selectedStudents.length} students selected`);
+            $('#allocateStudentsBtn').prop('disabled', selectedStudents.length === 0);
+        }
+
+        function selectAllStudents() {
+            $('.student-checkbox').prop('checked', true).trigger('change');
+        }
+
+        function deselectAllStudents() {
+            $('.student-checkbox').prop('checked', false).trigger('change');
+        }
+
+        function allocateStudents() {
+            if (selectedStudents.length === 0) {
+                showNotification('Please select at least one student', 'error');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("AllocateStudents", "Tests")',
+                type: 'POST',
+                data: { 
+                    testId: testId,
+                    selectedStudentIds: selectedStudents
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showNotification('Students allocated successfully!', 'success');
+                        setTimeout(function() {
+                            window.location.href = '@Url.Action("Index", "Tests")';
+                        }, 2000);
+                    } else {
+                        showNotification('Error allocating students: ' + response.error, 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error allocating students:', error);
+                    showNotification('Error allocating students: ' + error, 'error');
+                }
+            });
+        }
+
+        function showNotification(message, type) {
+            var alertClass = type === 'error' ? 'alert-danger' : 
+                           type === 'warning' ? 'alert-warning' : 'alert-success';
+            var notification = $('<div class="alert ' + alertClass + ' alert-dismissible fade show" role="alert">' +
+                message +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                '</div>');
+            
+            $('body').prepend(notification);
+            
+            setTimeout(function() {
+                notification.alert('close');
+            }, 5000);
+        }
+    </script>
+
+    <style>
+        .student-card {
+            transition: border-color 0.15s ease-in-out;
+        }
+        .student-card:hover {
+            border-color: #0d6efd !important;
+        }
+    </style>
+}
