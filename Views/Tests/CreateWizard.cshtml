@@ -659,8 +659,10 @@
             updateSubjectProgress();
         }
 
-        function populateSubjectDropdown() {
+        function populateSubjectDropdown(triggerChange = true) {
             var dropdown = $('#subjectDropdown');
+            var currentValue = dropdown.val(); // Store current selection
+            
             dropdown.empty();
             dropdown.append('<option value="">-- Select Subject --</option>');
             
@@ -674,12 +676,15 @@
                 
                 var option = $(`<option value="${subjectId}">${config.subjectName} ${statusText}</option>`);
                 
-                // Priority: return-to-subject > previously-selected
+                // Priority: return-to-subject > previously-selected > current value
                 var shouldSelect = false;
                 if (returnToSubject && returnToSubject == subjectId) {
                     option.prop('selected', true);
                     shouldSelect = true;
                 } else if (previouslySelectedSubject && previouslySelectedSubject == subjectId) {
+                    option.prop('selected', true);
+                    shouldSelect = true;
+                } else if (currentValue == subjectId) {
                     option.prop('selected', true);
                     shouldSelect = true;
                 }
@@ -692,13 +697,14 @@
                 $('#subjectDropdown').removeData('return-to-subject');
             }
             
-            // If a subject was selected, trigger the change event
-            if ((returnToSubject || previouslySelectedSubject) && dropdown.val()) {
+            // Only trigger change event if explicitly requested and conditions are met
+            if (triggerChange && (returnToSubject || previouslySelectedSubject) && dropdown.val()) {
                 onSubjectChange();
             }
         }
 
         function onSubjectChange() {
+            console.log('onSubjectChange called with subjectId:', $('#subjectDropdown').val());
             var selectedSubjectId = $('#subjectDropdown').val();
             
             // Store the currently selected subject for restoration later
@@ -721,6 +727,14 @@
         }
 
         function showTopicSelection(subjectId) {
+            console.log('showTopicSelection called for subject:', subjectId);
+            
+            // Check if questions are already loaded and visible
+            if ($(`#questionsContainer_${subjectId}`).length > 0 && $('#questionSelectionArea').is(':visible')) {
+                console.log('Questions already loaded for subject:', subjectId);
+                return; // Don't reload if questions are already visible
+            }
+            
             var config = subjectConfigs[subjectId];
             var html = `
                 <div class="mb-3">
@@ -1016,14 +1030,31 @@
         }
 
         function onQuestionSelectionChange(subjectId) {
+            console.log('Question selection changed for subject:', subjectId);
             var selectedQuestionIds = $(`#questionsContainer_${subjectId} .question-checkbox:checked`).map(function() {
                 return parseInt($(this).val());
             }).get();
             
+            console.log('Selected question IDs:', selectedQuestionIds);
             selectedQuestions[subjectId] = selectedQuestionIds;
             updateQuestionCounter(subjectId);
             updateSubjectProgress();
-            populateSubjectDropdown(); // Update dropdown with new counts
+            // Update dropdown text without triggering change event
+            updateDropdownText(subjectId);
+        }
+        
+        function updateDropdownText(subjectId) {
+            var dropdown = $('#subjectDropdown');
+            var currentValue = dropdown.val();
+            
+            if (currentValue == subjectId) {
+                var config = subjectConfigs[subjectId];
+                var selectedCount = getSelectedQuestionCount(subjectId);
+                var statusText = selectedCount > 0 ? `(${selectedCount}/${config.numberOfQuestions} selected)` : '(Not started)';
+                
+                // Update the text of the currently selected option
+                dropdown.find('option:selected').text(`${config.subjectName} ${statusText}`);
+            }
         }
 
         function updateQuestionCounter(subjectId) {
