@@ -22,7 +22,6 @@ namespace CETExamApp.Models
 
         // Navigation properties
         public virtual ICollection<Group>? Groups { get; set; }
-        public virtual ICollection<Test>? Tests { get; set; }
     }
 }
 

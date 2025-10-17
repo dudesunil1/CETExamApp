@@ -113,7 +113,13 @@ namespace CETExamApp.Data
                 .HasOne(t => t.Class)
                 .WithMany()
                 .HasForeignKey(t => t.ClassId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            // Configure decimal precision for TestResult.Percentage
+            builder.Entity<TestResult>()
+                .Property(tr => tr.Percentage)
+                .HasPrecision(5, 2);
 
             builder.Entity<TestAttempt>()
                 .HasOne(ta => ta.TestAllocation)
