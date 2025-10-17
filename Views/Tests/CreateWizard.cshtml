@@ -1074,6 +1074,9 @@
         }
 
         function showQuestionReview() {
+            console.log('Subject configs:', subjectConfigs);
+            console.log('Selected questions:', selectedQuestions);
+            
             var html = `
                 <div class="alert alert-info mb-4">
                     <i class="bi bi-info-circle"></i>
@@ -1084,7 +1087,10 @@
             `;
             
             var accordionIndex = 0;
-            Object.keys(subjectConfigs).forEach(function(subjectId) {
+            var subjectKeys = Object.keys(subjectConfigs);
+            console.log('Processing subjects:', subjectKeys);
+            
+            subjectKeys.forEach(function(subjectId) {
                 var config = subjectConfigs[subjectId];
                 var selected = selectedQuestions[subjectId] || [];
                 var accordionId = `subject_${subjectId}`;
@@ -1099,18 +1105,15 @@
                                     data-bs-target="#${collapseId}" 
                                     aria-expanded="false" 
                                     aria-controls="${collapseId}">
-                                <div class="d-flex justify-content-between align-items-center w-100 me-3">
-                                    <div>
+                                <div class="d-flex justify-content-between align-items-center w-100">
+                                    <div class="d-flex align-items-center">
                                         <i class="bi bi-book me-2"></i>
                                         <strong>${config.subjectName}</strong>
                                     </div>
                                     <div class="d-flex align-items-center">
-                                        <span class="badge ${selected.length >= config.numberOfQuestions ? 'bg-success' : selected.length > 0 ? 'bg-warning' : 'bg-danger'} me-3">
+                                        <span class="badge ${selected.length >= config.numberOfQuestions ? 'bg-success' : selected.length > 0 ? 'bg-warning' : 'bg-danger'}">
                                             ${selected.length}/${config.numberOfQuestions} questions
                                         </span>
-                                        <button type="button" class="btn btn-sm btn-primary" onclick="addMoreQuestions(${subjectId})">
-                                            <i class="bi bi-plus-circle"></i> Add/Select More Questions
-                                        </button>
                                     </div>
                                 </div>
                             </button>
@@ -1120,6 +1123,11 @@
                              aria-labelledby="heading_${accordionIndex}" 
                              data-bs-parent="#questionReviewAccordion">
                             <div class="accordion-body">
+                                <div class="mb-3">
+                                    <button type="button" class="btn btn-primary" onclick="addMoreQuestions(${subjectId})">
+                                        <i class="bi bi-plus-circle"></i> Add/Select More Questions
+                                    </button>
+                                </div>
                 `;
                 
                 if (selected.length === 0) {
@@ -1266,12 +1274,130 @@
             border-color: #0d6efd !important;
         }
         
-        /* Custom styling for Question Review accordion headers */
+        /* Custom styling for Question Review accordion headers - Updated v2.0 */
         #questionReviewAccordion .accordion-button {
             background-color: #e3f2fd !important; /* Light blue background */
             border-color: #bbdefb !important;
             color: #1976d2 !important; /* Darker blue text */
             font-weight: 600 !important;
+            padding: 1rem 1.25rem !important;
+            border-radius: 0.375rem !important;
+            border: 1px solid #bbdefb !important;
+            box-shadow: none !important;
+        }
+        
+        /* Ensure consistent styling for all accordion items */
+        #questionReviewAccordion .accordion-item {
+            border: 1px solid #bbdefb !important;
+            border-radius: 0.375rem !important;
+            margin-bottom: 0.5rem !important;
+            overflow: hidden !important;
+        }
+        
+        /* Style the book icon consistently */
+        #questionReviewAccordion .accordion-button .bi-book {
+            color: #1976d2 !important;
+            font-size: 1.1rem !important;
+        }
+        
+        /* Style the subject name consistently */
+        #questionReviewAccordion .accordion-button strong {
+            color: #1976d2 !important;
+            font-weight: 600 !important;
+            font-size: 1rem !important;
+        }
+        
+        /* Style the question count badge consistently */
+        #questionReviewAccordion .accordion-button .badge {
+            font-size: 0.75rem !important;
+            font-weight: 500 !important;
+            padding: 0.375rem 0.75rem !important;
+            border-radius: 1rem !important;
+        }
+        
+        /* Style the Add/Select More Questions button consistently */
+        #questionReviewAccordion .accordion-button .btn-primary {
+            background-color: #1976d2 !important;
+            border-color: #1976d2 !important;
+            font-size: 0.875rem !important;
+            padding: 0.375rem 0.75rem !important;
+            border-radius: 0.375rem !important;
+        }
+        
+        #questionReviewAccordion .accordion-button .btn-primary:hover {
+            background-color: #1565c0 !important;
+            border-color: #1565c0 !important;
+        }
+        
+        /* Style the accordion body consistently */
+        #questionReviewAccordion .accordion-body {
+            background-color: #ffffff !important;
+            border-top: 1px solid #bbdefb !important;
+            padding: 1.25rem !important;
+        }
+        
+        /* Style the Add/Select More Questions button in content area */
+        #questionReviewAccordion .accordion-body .btn-primary {
+            background-color: #1976d2 !important;
+            border-color: #1976d2 !important;
+            color: white !important;
+            font-size: 0.875rem !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: 0.375rem !important;
+            font-weight: 500 !important;
+        }
+        
+        #questionReviewAccordion .accordion-body .btn-primary:hover {
+            background-color: #1565c0 !important;
+            border-color: #1565c0 !important;
+        }
+        
+        /* Ensure consistent spacing and layout */
+        #questionReviewAccordion .accordion-button .d-flex {
+            align-items: center !important;
+            width: 100% !important;
+        }
+        
+        #questionReviewAccordion .accordion-button .d-flex > div:first-child {
+            flex-grow: 1 !important;
+        }
+        
+        #questionReviewAccordion .accordion-button .d-flex > div:last-child {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.75rem !important;
+        }
+        
+        /* Ensure chevron icon is properly positioned and styled */
+        #questionReviewAccordion .accordion-button::after {
+            margin-left: auto !important;
+            flex-shrink: 0 !important;
+            order: 3 !important;
+            width: 1.25rem !important;
+            height: 1.25rem !important;
+        }
+        
+        /* Ensure proper flex layout for all elements */
+        #questionReviewAccordion .accordion-button {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+        }
+        
+        /* Final consistency check - ensure all elements match Physics styling */
+        #questionReviewAccordion .accordion-item:first-child .accordion-button,
+        #questionReviewAccordion .accordion-item:nth-child(2) .accordion-button,
+        #questionReviewAccordion .accordion-item:nth-child(3) .accordion-button,
+        #questionReviewAccordion .accordion-item:nth-child(4) .accordion-button,
+        #questionReviewAccordion .accordion-item:nth-child(5) .accordion-button {
+            background-color: #e3f2fd !important;
+            border-color: #bbdefb !important;
+            color: #1976d2 !important;
+            font-weight: 600 !important;
+            padding: 1rem 1.25rem !important;
+            border-radius: 0.375rem !important;
+            border: 1px solid #bbdefb !important;
+            box-shadow: none !important;
         }
         
         #questionReviewAccordion .accordion-button:not(.collapsed) {
@@ -1286,12 +1412,89 @@
             border-color: #bbdefb !important;
         }
         
+        /* Ensure chevron is always visible for all accordion buttons */
         #questionReviewAccordion .accordion-button::after {
+            content: "" !important;
+            flex-shrink: 0 !important;
+            width: 1.25rem !important;
+            height: 1.25rem !important;
+            margin-left: auto !important;
+            background-repeat: no-repeat !important;
+            background-size: 1.25rem !important;
+            background-position: center !important;
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%231976d2'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e") !important;
+            transform: rotate(0deg) !important;
+            transition: transform 0.2s ease-in-out !important;
         }
         
         #questionReviewAccordion .accordion-button:not(.collapsed)::after {
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%231976d2'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e") !important;
+            transform: rotate(180deg) !important;
+        }
+        
+        /* Force chevron visibility for all accordion buttons - more specific selector */
+        .accordion#questionReviewAccordion .accordion-button::after {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        /* Additional fallback for collapsed state */
+        .accordion#questionReviewAccordion .accordion-button.collapsed::after {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        /* Ultra-specific selector to ensure chevron shows for all subjects */
+        .accordion#questionReviewAccordion .accordion-item .accordion-header .accordion-button::after {
+            content: "" !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            width: 1.25rem !important;
+            height: 1.25rem !important;
+            margin-left: auto !important;
+            background-repeat: no-repeat !important;
+            background-size: 1.25rem !important;
+            background-position: center !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%231976d2'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e") !important;
+            transform: rotate(0deg) !important;
+            transition: transform 0.2s ease-in-out !important;
+        }
+        
+        .accordion#questionReviewAccordion .accordion-item .accordion-header .accordion-button:not(.collapsed)::after {
+            transform: rotate(180deg) !important;
+        }
+        
+        /* Final fallback - ensure chevron is visible with maximum specificity */
+        div#questionReviewAccordion.accordion div.accordion-item h2.accordion-header button.accordion-button::after {
+            content: "" !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            width: 1.25rem !important;
+            height: 1.25rem !important;
+            margin-left: auto !important;
+            background-repeat: no-repeat !important;
+            background-size: 1.25rem !important;
+            background-position: center !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%231976d2'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e") !important;
+            transform: rotate(0deg) !important;
+            transition: transform 0.2s ease-in-out !important;
+            flex-shrink: 0 !important;
+        }
+        
+        div#questionReviewAccordion.accordion div.accordion-item h2.accordion-header button.accordion-button:not(.collapsed)::after {
+            transform: rotate(180deg) !important;
+        }
+        
+        /* Force chevron visibility for all accordion buttons */
+        #questionReviewAccordion .accordion-button::after {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            content: "" !important;
         }
     </style>
 }
