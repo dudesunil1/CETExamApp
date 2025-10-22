@@ -56,7 +56,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
     options.SlidingExpiration = true;
     options.Cookie.HttpOnly = true; // Prevent XSS attacks
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // HTTPS only
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // Allow HTTP
     options.Cookie.SameSite = SameSiteMode.Strict; // CSRF protection
 });
 
@@ -65,7 +65,7 @@ builder.Services.AddAntiforgery(options =>
 {
     options.HeaderName = "X-CSRF-TOKEN";
     options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // Allow HTTP
     options.Cookie.SameSite = SameSiteMode.Strict;
 });
 
@@ -140,8 +140,8 @@ app.Use(async (context, next) =>
     await next();
 });
 
-// Force HTTPS redirection
-app.UseHttpsRedirection();
+// Force HTTPS redirection (commented out for development)
+// app.UseHttpsRedirection();
 
 // Serve static files with security headers
 app.UseStaticFiles();
