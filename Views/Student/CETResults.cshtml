@@ -1,0 +1,401 @@
+@model CETExamApp.Models.Test
+@{
+    ViewData["Title"] = "CET Exam Results - " + Model.Title;
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-success text-white text-center py-4">
+                    <h2 class="mb-0">
+                        <i class="bi bi-trophy-fill me-2"></i>
+                        CET Exam Results
+                    </h2>
+                    <p class="mb-0 mt-2">@Model.Title</p>
+                </div>
+                
+                <div class="card-body p-5">
+                    <!-- Overall Score Card -->
+                    <div class="row mb-5">
+                        <div class="col-md-4">
+                            <div class="card text-white bg-primary shadow h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-check-circle display-4"></i>
+                                    <h3 class="mt-2" id="totalQuestions">0</h3>
+                                    <p class="mb-0">Total Questions</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card text-white bg-info shadow h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-pencil-square display-4"></i>
+                                    <h3 class="mt-2" id="attemptedQuestions">0</h3>
+                                    <p class="mb-0">Attempted</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card text-white bg-success shadow h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-award display-4"></i>
+                                    <h3 class="mt-2" id="correctAnswers">0</h3>
+                                    <p class="mb-0">Correct Answers</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subject-wise Performance -->
+                    <div class="mb-5">
+                        <h4 class="text-primary mb-4">
+                            <i class="bi bi-bar-chart me-2"></i>Subject-wise Performance
+                        </h4>
+                        
+                        <div class="row" id="subjectPerformance">
+                            <!-- Subject cards will be generated here -->
+                        </div>
+                    </div>
+
+                    <!-- Detailed Summary -->
+                    <div class="mb-5">
+                        <h4 class="text-primary mb-4">
+                            <i class="bi bi-list-check me-2"></i>Detailed Summary
+                        </h4>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th>Subject</th>
+                                        <th>Total Questions</th>
+                                        <th>Attempted</th>
+                                        <th>Correct</th>
+                                        <th>Accuracy</th>
+                                        <th>Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="summaryTable">
+                                    <!-- Summary rows will be generated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Answer Key Section -->
+                    <div class="mb-5" id="answerKeySection" style="display: none;">
+                        <h4 class="text-primary mb-4">
+                            <i class="bi bi-key me-2"></i>Answer Key
+                        </h4>
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Note:</strong> The answer key will be displayed if enabled by the administrator.
+                        </div>
+                        
+                        <div id="answerKeyContent">
+                            <!-- Answer key will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Dashboard" class="btn btn-secondary btn-lg">
+                            <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                        <div>
+                            <button type="button" class="btn btn-info btn-lg me-2" onclick="downloadResults()">
+                                <i class="bi bi-download me-2"></i>Download Results
+                            </button>
+                            <button type="button" class="btn btn-primary btn-lg" onclick="printResults()">
+                                <i class="bi bi-printer me-2"></i>Print Results
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .subject-card {
+        transition: transform 0.3s ease;
+    }
+    
+    .subject-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .progress-ring {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .progress-ring circle {
+        fill: transparent;
+        stroke-width: 8;
+        stroke-linecap: round;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+    }
+    
+    .progress-ring .progress-ring-circle {
+        stroke: var(--bs-success);
+        transition: stroke-dasharray 0.35s;
+    }
+    
+    .progress-ring .progress-ring-bg {
+        stroke: #e9ecef;
+    }
+    
+    .accuracy-text {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--bs-success);
+    }
+    
+    .answer-key-item {
+        padding: 10px;
+        margin: 5px 0;
+        border-left: 4px solid var(--bs-primary);
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+    
+    .correct-answer {
+        border-left-color: var(--bs-success);
+        background-color: #d4edda;
+    }
+    
+    .wrong-answer {
+        border-left-color: var(--bs-danger);
+        background-color: #f8d7da;
+    }
+    
+    .unattempted-answer {
+        border-left-color: var(--bs-warning);
+        background-color: #fff3cd;
+    }
+</style>
+
+<script>
+    let examResults = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get results from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const resultsParam = urlParams.get('results');
+        
+        if (resultsParam) {
+            try {
+                examResults = JSON.parse(decodeURIComponent(resultsParam));
+                displayResults();
+            } catch (e) {
+                console.error('Error parsing results:', e);
+                showError('Error loading exam results');
+            }
+        } else {
+            showError('No results data found');
+        }
+    });
+
+    function displayResults() {
+        if (!examResults) return;
+
+        // Update overall statistics
+        document.getElementById('totalQuestions').textContent = examResults.totalQuestions;
+        document.getElementById('attemptedQuestions').textContent = examResults.attemptedQuestions;
+        document.getElementById('correctAnswers').textContent = examResults.correctAnswers;
+
+        // Display subject-wise performance
+        displaySubjectPerformance();
+        
+        // Display detailed summary table
+        displaySummaryTable();
+        
+        // Load answer key if available
+        loadAnswerKey();
+    }
+
+    function displaySubjectPerformance() {
+        const container = document.getElementById('subjectPerformance');
+        container.innerHTML = '';
+
+        Object.keys(examResults.subjectWise).forEach(subject => {
+            const subjectData = examResults.subjectWise[subject];
+            const accuracy = subjectData.attempted > 0 ? (subjectData.correct / subjectData.attempted * 100).toFixed(1) : 0;
+            
+            const subjectCard = document.createElement('div');
+            subjectCard.className = 'col-md-6 col-lg-3 mb-4';
+            
+            subjectCard.innerHTML = `
+                <div class="card subject-card h-100">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="bi bi-${getSubjectIcon(subject)} display-4 text-${getSubjectColor(subject)}"></i>
+                        </div>
+                        <h5 class="card-title text-capitalize">${subject}</h5>
+                        <div class="progress-ring mb-3 mx-auto">
+                            <svg class="progress-ring" width="80" height="80">
+                                <circle class="progress-ring-bg" cx="40" cy="40" r="36"></circle>
+                                <circle class="progress-ring-circle" cx="40" cy="40" r="36" 
+                                        style="stroke-dasharray: ${2 * Math.PI * 36 * (accuracy / 100)} ${2 * Math.PI * 36};"></circle>
+                            </svg>
+                        </div>
+                        <div class="accuracy-text">${accuracy}%</div>
+                        <p class="text-muted mb-0">${subjectData.correct}/${subjectData.attempted} correct</p>
+                        <small class="text-muted">${subjectData.total} total questions</small>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(subjectCard);
+        });
+    }
+
+    function displaySummaryTable() {
+        const tbody = document.getElementById('summaryTable');
+        tbody.innerHTML = '';
+
+        let totalAttempted = 0;
+        let totalCorrect = 0;
+
+        Object.keys(examResults.subjectWise).forEach(subject => {
+            const subjectData = examResults.subjectWise[subject];
+            const accuracy = subjectData.attempted > 0 ? (subjectData.correct / subjectData.attempted * 100).toFixed(1) : 0;
+            
+            totalAttempted += subjectData.attempted;
+            totalCorrect += subjectData.correct;
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="text-capitalize">
+                    <i class="bi bi-${getSubjectIcon(subject)} me-2 text-${getSubjectColor(subject)}"></i>
+                    ${subject}
+                </td>
+                <td>${subjectData.total}</td>
+                <td>${subjectData.attempted}</td>
+                <td>${subjectData.correct}</td>
+                <td>
+                    <span class="badge bg-${getAccuracyBadgeColor(accuracy)}">${accuracy}%</span>
+                </td>
+                <td><strong>${subjectData.correct}/${subjectData.total}</strong></td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+
+        // Add total row
+        const totalRow = document.createElement('tr');
+        totalRow.className = 'table-success';
+        const totalAccuracy = totalAttempted > 0 ? (totalCorrect / totalAttempted * 100).toFixed(1) : 0;
+        
+        totalRow.innerHTML = `
+            <td><strong>Total</strong></td>
+            <td><strong>${examResults.totalQuestions}</strong></td>
+            <td><strong>${totalAttempted}</strong></td>
+            <td><strong>${totalCorrect}</strong></td>
+            <td><strong><span class="badge bg-${getAccuracyBadgeColor(totalAccuracy)}">${totalAccuracy}%</span></strong></td>
+            <td><strong>${totalCorrect}/${examResults.totalQuestions}</strong></td>
+        `;
+        
+        tbody.appendChild(totalRow);
+    }
+
+    function getSubjectIcon(subject) {
+        const icons = {
+            physics: 'atom',
+            chemistry: 'flask',
+            maths: 'calculator',
+            biology: 'heart-pulse'
+        };
+        return icons[subject] || 'book';
+    }
+
+    function getSubjectColor(subject) {
+        const colors = {
+            physics: 'primary',
+            chemistry: 'info',
+            maths: 'warning',
+            biology: 'success'
+        };
+        return colors[subject] || 'secondary';
+    }
+
+    function getAccuracyBadgeColor(accuracy) {
+        if (accuracy >= 80) return 'success';
+        if (accuracy >= 60) return 'warning';
+        return 'danger';
+    }
+
+    function loadAnswerKey() {
+        // Check if answer key is enabled (this would come from server)
+        const answerKeyEnabled = true; // This should be determined from server
+        
+        if (answerKeyEnabled) {
+            document.getElementById('answerKeySection').style.display = 'block';
+            // Load answer key content
+            // This would typically come from the server
+            generateSampleAnswerKey();
+        }
+    }
+
+    function generateSampleAnswerKey() {
+        const content = document.getElementById('answerKeyContent');
+        content.innerHTML = '<p>Answer key functionality would be implemented here with actual question data.</p>';
+    }
+
+    function downloadResults() {
+        // Create a downloadable version of the results
+        const resultsText = generateResultsText();
+        const blob = new Blob([resultsText], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `CET_Results_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+
+    function generateResultsText() {
+        let text = 'CET EXAM RESULTS\n';
+        text += '================\n\n';
+        text += `Test: @Model.Title\n`;
+        text += `Date: ${new Date().toLocaleDateString()}\n\n`;
+        
+        text += 'OVERALL PERFORMANCE:\n';
+        text += `Total Questions: ${examResults.totalQuestions}\n`;
+        text += `Attempted: ${examResults.attemptedQuestions}\n`;
+        text += `Correct Answers: ${examResults.correctAnswers}\n\n`;
+        
+        text += 'SUBJECT-WISE PERFORMANCE:\n';
+        Object.keys(examResults.subjectWise).forEach(subject => {
+            const data = examResults.subjectWise[subject];
+            const accuracy = data.attempted > 0 ? (data.correct / data.attempted * 100).toFixed(1) : 0;
+            text += `${subject.toUpperCase()}: ${data.correct}/${data.total} (${accuracy}% accuracy)\n`;
+        });
+        
+        return text;
+    }
+
+    function printResults() {
+        window.print();
+    }
+
+    function showError(message) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-danger alert-dismissible fade show';
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.querySelector('.card-body').insertBefore(alert, document.querySelector('.card-body').firstChild);
+    }
+</script>

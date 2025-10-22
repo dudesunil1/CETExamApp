@@ -31,6 +31,7 @@
                     <tr>
                         <th>Title</th>
                         <th>Class</th>
+                        <th>Test Type</th>
                         <th>Duration</th>
                         <th>Questions</th>
                         <th>Total Marks</th>
@@ -51,6 +52,23 @@
                                 else
                                 {
                                     <span class="text-muted">All Classes</span>
+                                }
+                            </td>
+                            <td>
+                                @switch (item.TestType)
+                                {
+                                    case CETExamApp.Models.TestType.CET:
+                                        <span class="badge bg-primary">CET</span>
+                                        break;
+                                    case CETExamApp.Models.TestType.JEE:
+                                        <span class="badge bg-warning">JEE</span>
+                                        break;
+                                    case CETExamApp.Models.TestType.Exercise:
+                                        <span class="badge bg-info">Exercise</span>
+                                        break;
+                                    default:
+                                        <span class="badge bg-secondary">CET</span>
+                                        break;
                                 }
                             </td>
                             <td>@item.DurationMinutes min</td>

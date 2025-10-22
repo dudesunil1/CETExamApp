@@ -1,4 +1,5 @@
 @model CETExamApp.Models.TestAllocation
+@using CETExamApp.Helpers
 @{
     ViewData["Title"] = "Remove Test Allocation";
 }
@@ -28,13 +29,13 @@
                     <dd class="col-sm-8">@(Model.Student?.Group?.Name ?? "Not assigned")</dd>
 
                     <dt class="col-sm-4">Allocated Date</dt>
-                    <dd class="col-sm-8">@Model.AllocatedDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                    <dd class="col-sm-8">@Model.AllocatedDate.ToIST().ToString("dd/MM/yyyy HH:mm") IST</dd>
 
                     <dt class="col-sm-4">Scheduled Start</dt>
-                    <dd class="col-sm-8">@(Model.ScheduledStartTime?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Not set")</dd>
+                    <dd class="col-sm-8">@(Model.ScheduledStartTime?.ToIST().ToString("dd/MM/yyyy HH:mm") ?? "Not set")@(Model.ScheduledStartTime != null ? " IST" : "")</dd>
 
                     <dt class="col-sm-4">Scheduled End</dt>
-                    <dd class="col-sm-8">@(Model.ScheduledEndTime?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Not set")</dd>
+                    <dd class="col-sm-8">@(Model.ScheduledEndTime?.ToIST().ToString("dd/MM/yyyy HH:mm") ?? "Not set")@(Model.ScheduledEndTime != null ? " IST" : "")</dd>
 
                     <dt class="col-sm-4">Status</dt>
                     <dd class="col-sm-8">

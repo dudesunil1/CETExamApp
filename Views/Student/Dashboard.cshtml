@@ -1,5 +1,6 @@
 @model ApplicationUser
 @using CETExamApp.Models
+@using CETExamApp.Helpers
 @{
     ViewData["Title"] = "Student Dashboard";
     var upcomingTests = ViewBag.UpcomingTests as List<TestAllocation>;
@@ -97,7 +98,7 @@
                             <div>
                                 <strong>@attempt.Test?.Title</strong> (@attempt.Test?.Class?.Name)
                                 <br/>
-                                <small>Started: @attempt.StartedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small>
+                                <small>Started: @attempt.StartedAt.ToISTString() IST</small>
                             </div>
                             <a asp-action="TakeTest" asp-route-attemptId="@attempt.Id" class="btn btn-warning">
                                 <i class="bi bi-play-circle"></i> Resume Test
@@ -147,7 +148,7 @@
                                         <td>
                                             @if (allocation.ScheduledStartTime.HasValue)
                                             {
-                                                @allocation.ScheduledStartTime.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                                @allocation.ScheduledStartTime.Value.ToISTString()  
                                             }
                                             else
                                             {
@@ -169,10 +170,34 @@
                                             }
                                         </td>
                                         <td>
+                                            @{
+                                                var timeUntilStart = allocation.ScheduledStartTime.HasValue ? 
+                                                    allocation.ScheduledStartTime.Value - DateTime.UtcNow : 
+                                                    TimeSpan.Zero;
+                                                var canViewInstructions = allocation.ScheduledStartTime.HasValue && 
+                                                    timeUntilStart.TotalMinutes <= 30 && 
+                                                    timeUntilStart.TotalMinutes >= 0;
+                                            }
+                                            
                                             @if (!isExpired && canStart)
                                             {
-                                                <a asp-action="StartTest" asp-route-allocationId="@allocation.Id" class="btn btn-sm btn-success" onclick="return confirm('Are you ready to start the test? The timer will begin immediately.');">
-                                                    <i class="bi bi-play-circle"></i> Start Test
+                                                @if (allocation.Test?.TestType == CETExamApp.Models.TestType.CET)
+                                                {
+                                                    <a asp-action="CETExam" asp-route-id="@allocation.TestId" class="btn btn-sm btn-success" onclick="return confirm('Are you ready to start the CET exam? The timer will begin immediately.');">
+                                                        <i class="bi bi-play-circle"></i> Start CET Exam
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <a asp-action="StartTest" asp-route-allocationId="@allocation.Id" class="btn btn-sm btn-success" onclick="return confirm('Are you ready to start the test? The timer will begin immediately.');">
+                                                        <i class="bi bi-play-circle"></i> Start Test
+                                                    </a>
+                                                }
+                                            }
+                                            else if (canViewInstructions)
+                                            {
+                                                <a asp-action="TestInstructions" asp-route-id="@allocation.TestId" class="btn btn-sm btn-info">
+                                                    <i class="bi bi-info-circle"></i> View Instructions
                                                 </a>
                                             }
                                             else if (!canStart)
@@ -234,7 +259,7 @@
                                     <tr>
                                         <td><strong>@result.Test?.Title</strong></td>
                                         <td><span class="badge bg-info">@result.Test?.Class?.Name</span></td>
-                                        <td>@result.SubmittedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>@result.SubmittedAt?.ToISTString() IST</td>
                                         <td>@result.ObtainedMarks / @result.TotalMarks</td>
                                         <td>@result.Percentage.ToString("0.00")%</td>
                                         <td>

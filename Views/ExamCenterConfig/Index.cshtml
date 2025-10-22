@@ -1,4 +1,5 @@
 @model CETExamApp.Models.ExamCenterConfig
+@using CETExamApp.Helpers
 @{
     ViewData["Title"] = "Exam Center Configuration";
 }
@@ -92,7 +93,7 @@
                         <div class="alert alert-info">
                             <small>
                                 <i class="bi bi-info-circle"></i>
-                                Last updated: @Model.LastUpdated.ToLocalTime().ToString("dd/MM/yyyy HH:mm") 
+                                Last updated: @Model.LastUpdated.ToISTString() IST 
                                 @if (!string.IsNullOrEmpty(Model.UpdatedBy))
                                 {
                                     <text>by @Model.UpdatedBy</text>

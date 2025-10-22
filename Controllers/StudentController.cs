@@ -1,5 +1,6 @@
 using CETExamApp.Data;
 using CETExamApp.Models;
+using CETExamApp.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +23,118 @@ namespace CETExamApp.Controllers
             _context = context;
             _userManager = userManager;
             _logger = logger;
+        }
+
+        public async Task<IActionResult> TestInstructions(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            // Check if test is allocated to this student and starts within 30 minutes
+            var testAllocation = await _context.TestAllocations
+                .Include(ta => ta.Test)
+                    .ThenInclude(t => t!.TestQuestions)
+                .FirstOrDefaultAsync(ta => ta.TestId == id && ta.StudentId == user.Id);
+
+            if (testAllocation == null)
+            {
+                TempData["Error"] = "Test not found or not allocated to you.";
+                return RedirectToAction("Dashboard");
+            }
+
+            var test = testAllocation.Test;
+            if (test == null)
+            {
+                TempData["Error"] = "Test not found.";
+                return RedirectToAction("Dashboard");
+            }
+
+            // Check if test starts within 30 minutes
+            var timeUntilStart = testAllocation.ScheduledStartTime - DateTime.UtcNow;
+            if (timeUntilStart?.TotalMinutes > 30 || timeUntilStart?.TotalMinutes < 0)
+            {
+                TempData["Error"] = "Test instructions are only available 30 minutes before the scheduled start time.";
+                return RedirectToAction("Dashboard");
+            }
+
+            // Check if student has already started this test
+            var existingAttempt = await _context.TestAttempts
+                .FirstOrDefaultAsync(ta => ta.TestId == id && ta.StudentId == user.Id);
+
+            if (existingAttempt != null && existingAttempt.Status != TestAttemptStatus.NotStarted)
+            {
+                TempData["Error"] = "You have already started this test.";
+                return RedirectToAction("Dashboard");
+            }
+
+            return View(test);
+        }
+
+        public async Task<IActionResult> CETExam(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            // Check if test is allocated to this student
+            var testAllocation = await _context.TestAllocations
+                .Include(ta => ta.Test)
+                    .ThenInclude(t => t!.TestQuestions)
+                        .ThenInclude(tq => tq.Question)
+                .FirstOrDefaultAsync(ta => ta.TestId == id && ta.StudentId == user.Id);
+
+            if (testAllocation == null)
+            {
+                TempData["Error"] = "Test not found or not allocated to you.";
+                return RedirectToAction("Dashboard");
+            }
+
+            var test = testAllocation.Test;
+            if (test == null)
+            {
+                TempData["Error"] = "Test not found.";
+                return RedirectToAction("Dashboard");
+            }
+
+            // Check if it's a CET test
+            if (test.TestType != TestType.CET)
+            {
+                TempData["Error"] = "This is not a CET test.";
+                return RedirectToAction("Dashboard");
+            }
+
+            // Check if test has started
+            var timeUntilStart = testAllocation.ScheduledStartTime - DateTime.UtcNow;
+            if (timeUntilStart?.TotalMinutes > 0)
+            {
+                TempData["Error"] = "Test has not started yet.";
+                return RedirectToAction("Dashboard");
+            }
+
+            // Check if test has expired
+            var timeUntilEnd = testAllocation.ScheduledEndTime - DateTime.UtcNow;
+            if (timeUntilEnd?.TotalMinutes < 0 && !test.AllowLateSubmission)
+            {
+                TempData["Error"] = "Test has expired.";
+                return RedirectToAction("Dashboard");
+            }
+
+            return View(test);
+        }
+
+        public async Task<IActionResult> CETResults(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            // Get the test
+            var test = await _context.Tests.FindAsync(id);
+            if (test == null)
+            {
+                TempData["Error"] = "Test not found.";
+                return RedirectToAction("Dashboard");
+            }
+
+            return View(test);
         }
 
         public async Task<IActionResult> Dashboard()
@@ -151,7 +264,7 @@ namespace CETExamApp.Controllers
                     TestAllocationId = allocationId,
                     StudentId = user.Id,
                     TestId = allocation.Test!.Id,
-                    StartedAt = DateTime.UtcNow,
+                    StartedAt = DateTimeExtensions.NowIST(),
                     Status = TestAttemptStatus.InProgress,
                     ShuffledQuestionOrder = shuffledOrder
                 };
@@ -294,7 +407,7 @@ namespace CETExamApp.Controllers
             }
 
             studentAnswer.AnswerText = answer;
-            studentAnswer.AnsweredAt = DateTime.UtcNow;
+            studentAnswer.AnsweredAt = DateTimeExtensions.NowIST();
             studentAnswer.IsMarkedForReview = markForReview;
 
             // Update status
@@ -307,7 +420,7 @@ namespace CETExamApp.Controllers
                 studentAnswer.Status = QuestionStatus.Visited;
             }
 
-            attempt.LastActivityAt = DateTime.UtcNow;
+            attempt.LastActivityAt = DateTimeExtensions.NowIST();
             await _context.SaveChangesAsync();
 
             return Json(new { success = true, status = studentAnswer.Status.ToString() });
@@ -365,14 +478,14 @@ namespace CETExamApp.Controllers
 
             if (attempt == null) return;
 
-            attempt.SubmittedAt = DateTime.UtcNow;
+            attempt.SubmittedAt = DateTimeExtensions.NowIST();
             attempt.Status = TestAttemptStatus.Submitted;
 
             var allocation = await _context.TestAllocations.FindAsync(attempt.TestAllocationId);
             if (allocation != null)
             {
                 allocation.IsCompleted = true;
-                allocation.CompletedDate = DateTime.UtcNow;
+                allocation.CompletedDate = DateTimeExtensions.NowIST();
             }
 
             var testResult = await _context.TestResults
@@ -383,8 +496,8 @@ namespace CETExamApp.Controllers
             if (testResult != null)
             {
                 // Calculate results
-                testResult.SubmittedAt = DateTime.UtcNow;
-                testResult.TimeTakenMinutes = (int)(DateTime.UtcNow - attempt.StartedAt).TotalMinutes;
+                testResult.SubmittedAt = DateTimeExtensions.NowIST();
+                testResult.TimeTakenMinutes = (int)(DateTimeExtensions.NowIST() - attempt.StartedAt).TotalMinutes;
 
                 int obtainedMarks = 0;
                 foreach (var answer in testResult.StudentAnswers!)

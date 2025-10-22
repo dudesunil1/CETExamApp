@@ -120,9 +120,53 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-floating mb-3">
-                                <input asp-for="DurationMinutes" class="form-control" type="number" min="1" max="1440" id="durationMinutes" />
+                                <select asp-for="TestType" class="form-select" id="testTypeSelect">
+                                    <option value="0">CET</option>
+                                    <option value="1">JEE</option>
+                                    <option value="2">Exercise</option>
+                                </select>
+                                <label asp-for="TestType">Test Type</label>
+                                <span asp-validation-for="TestType" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input asp-for="DurationMinutes" class="form-control" type="number" min="1" max="1440" id="durationMinutes" readonly />
                                 <label asp-for="DurationMinutes">Duration (Minutes)</label>
                                 <span asp-validation-for="DurationMinutes" class="text-danger"></span>
+                                <div id="durationInfo" class="form-text" style="display: none;">
+                                    <i class="bi bi-info-circle text-primary"></i> Duration is fixed at 180 minutes (3 hours) for CET tests.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <!-- CET Group Selection -->
+                            <div class="form-floating mb-3" id="cetGroupSelection" style="display: none;">
+                                <select class="form-select" id="cetGroupSelect">
+                                    <option value="">-- Select Group --</option>
+                                    <option value="PCM">PCM (Physics, Chemistry, Mathematics)</option>
+                                    <option value="PCB">PCB (Physics, Chemistry, Biology)</option>
+                                </select>
+                                <label for="cetGroupSelect">Group</label>
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle text-primary"></i> Select the group to determine fixed question counts for CET test.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CET Question Counts Display -->
+                    <div id="cetQuestionCountsDisplay" style="display: none;">
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-info-circle"></i> CET Test Configuration</h6>
+                            <div id="cetQuestionCountsContent"></div>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-clock"></i> <strong>Duration:</strong> 180 minutes (3 hours) - Fixed
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -135,9 +179,12 @@
                     <div class="row">
                         <div class="col-md-4">
                             <div class="form-floating mb-3">
-                                <input asp-for="TotalQuestions" class="form-control" type="number" min="1" max="500" id="totalQuestions" />
+                                <input asp-for="TotalQuestions" class="form-control" type="number" min="1" max="500" id="totalQuestions" readonly />
                                 <label asp-for="TotalQuestions">Total Questions</label>
                                 <span asp-validation-for="TotalQuestions" class="text-danger"></span>
+                                <div id="questionsInfo" class="form-text" style="display: none;">
+                                    <i class="bi bi-info-circle text-primary"></i> Question counts are fixed for CET tests based on group selection.
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -183,8 +230,26 @@
                             <i class="bi bi-info-circle"></i>
                             <strong>Instructions:</strong> Enter the number of questions you want for each subject. You can leave some subjects as 0 if you don't want to include them in the test. At least one subject must have questions greater than 0.
                         </div>
+                        
+                        <!-- CET/JEE Validation Alert -->
+                        <div id="cetJeeValidationAlert" class="alert alert-warning" style="display: none;">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>CET/JEE Subject Rules:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Must include <strong>Physics</strong> and <strong>Chemistry</strong></li>
+                                <li>Must include either <strong>Mathematics</strong> OR <strong>Biology</strong> (not both)</li>
+                                <li>Valid combinations: Physics + Chemistry + Mathematics OR Physics + Chemistry + Biology</li>
+                            </ul>
+                        </div>
+                        
                         <h6>Configure Number of Questions per Subject:</h6>
                         <div id="subjectsTable"></div>
+                        
+                        <!-- Validation Error Message -->
+                        <div id="subjectValidationError" class="alert alert-danger mt-3" style="display: none;">
+                            <i class="bi bi-x-circle"></i>
+                            <span id="validationErrorMessage"></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -264,7 +329,7 @@
                 <button type="button" class="btn btn-primary" id="nextBtn">
                     Next <i class="bi bi-arrow-right"></i>
                 </button>
-                <button type="submit" class="btn btn-success" id="submitBtn" style="display: none;">
+                <button type="button" class="btn btn-success" id="submitBtn" style="display: none;" onclick="submitForm()">
                     <i class="bi bi-check-circle"></i> Create Test
                 </button>
             </div>
@@ -290,6 +355,12 @@
             // Initialize step indicators
             updateStepIndicators();
             updateNavigationButtons();
+            
+            // Initialize CET behavior if CET is selected by default
+            var testType = $('#testTypeSelect').val();
+            if (testType == '0') { // CET
+                handleTestTypeChange();
+            }
         });
 
 
@@ -310,6 +381,23 @@
                     loadSubjectsForClass(classId);
                 } else {
                     $('#subjectsConfiguration').hide();
+                }
+            });
+
+            // Test type selection
+            $('#testTypeSelect').change(function() {
+                updateCETJEEValidationAlert();
+                handleTestTypeChange();
+                if (currentStep === 2) {
+                    validateSubjectCombination();
+                }
+            });
+
+            // CET Group selection
+            $('#cetGroupSelect').change(function() {
+                var groupType = $(this).val();
+                if (groupType) {
+                    loadCETQuestionCounts(groupType);
                 }
             });
 
@@ -349,13 +437,29 @@
             var html = '<div class="table-responsive"><table class="table table-bordered">';
             html += '<thead><tr><th>Subject</th><th>Number of Questions</th></tr></thead><tbody>';
             
-            // Calculate questions per subject (evenly distributed)
-            var questionsPerSubject = Math.floor(totalQuestionsFromStep1 / subjects.length);
-            var remainingQuestions = totalQuestionsFromStep1 % subjects.length;
+            var testType = $('#testTypeSelect').val();
+            var isCET = testType == '0';
             
             subjects.forEach(function(subject, index) {
-                // Distribute remaining questions to first few subjects
-                var questionsForThisSubject = questionsPerSubject + (index < remainingQuestions ? 1 : 0);
+                var questionsForThisSubject = 0;
+                var isReadonly = false;
+                var fixedIndicator = '';
+                
+                if (isCET) {
+                    // For CET, we'll get the fixed counts from the group selection
+                    var selectedGroup = $('#cetGroupSelect').val();
+                    if (selectedGroup) {
+                        // We'll apply CET counts after this function completes
+                        questionsForThisSubject = 0;
+                    } else {
+                        questionsForThisSubject = 0;
+                    }
+                } else {
+                    // For non-CET tests, distribute questions evenly
+                    var questionsPerSubject = Math.floor(totalQuestionsFromStep1 / subjects.length);
+                    var remainingQuestions = totalQuestionsFromStep1 % subjects.length;
+                    questionsForThisSubject = questionsPerSubject + (index < remainingQuestions ? 1 : 0);
+                }
                 
                 html += `
                     <tr>
@@ -364,18 +468,252 @@
                             <input type="number" class="form-control subject-questions" 
                                    data-subject-id="${subject.id}" 
                                    data-subject-name="${subject.name}"
-                                   min="0" max="500" value="${questionsForThisSubject}" placeholder="Enter number of questions">
+                                   min="0" max="500" value="${questionsForThisSubject}" 
+                                   placeholder="Enter number of questions" ${isReadonly ? 'readonly' : ''}>
+                            ${fixedIndicator}
                         </td>
                     </tr>
                 `;
             });
             
             html += '</tbody></table></div>';
-            html += `<div class="alert alert-info mt-3">
-                        <i class="bi bi-info-circle"></i>
-                        <strong>Auto-distributed:</strong> ${totalQuestionsFromStep1} total questions distributed across ${subjects.length} subjects. You can adjust individual subject counts as needed.
-                    </div>`;
+            
+            if (!isCET) {
+                html += `<div class="alert alert-info mt-3">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Auto-distributed:</strong> ${totalQuestionsFromStep1} total questions distributed across ${subjects.length} subjects. You can adjust individual subject counts as needed.
+                        </div>`;
+            }
+            
             $('#subjectsTable').html(html);
+            
+            // Add event listeners for subject validation
+            $('.subject-questions').on('change input', function() {
+                validateSubjectCombination();
+            });
+            
+            // Show/hide CET/JEE validation alert based on test type
+            updateCETJEEValidationAlert();
+            
+            // Apply CET question counts if CET is selected and group is chosen
+            if (isCET) {
+                var selectedGroup = $('#cetGroupSelect').val();
+                if (selectedGroup) {
+                    loadCETQuestionCounts(selectedGroup);
+                }
+            }
+        }
+
+        function updateCETJEEValidationAlert() {
+            var testType = $('#testTypeSelect').val();
+            if (testType == '0' || testType == '1') { // CET or JEE
+                $('#cetJeeValidationAlert').show();
+            } else {
+                $('#cetJeeValidationAlert').hide();
+            }
+        }
+
+        function handleTestTypeChange() {
+            var testType = $('#testTypeSelect').val();
+            
+            if (testType == '0') { // CET
+                // Show CET-specific fields
+                $('#cetGroupSelection').show();
+                $('#cetQuestionCountsDisplay').show();
+                
+                // Disable duration and total questions fields
+                $('#durationMinutes').prop('readonly', true).val(180);
+                $('#totalQuestions').prop('readonly', true);
+                $('#durationInfo').show();
+                $('#questionsInfo').show();
+                
+                // Show CET-specific information
+                showCETInfo();
+            } else {
+                // Hide CET-specific fields
+                $('#cetGroupSelection').hide();
+                $('#cetQuestionCountsDisplay').hide();
+                
+                // Enable duration and total questions fields
+                $('#durationMinutes').prop('readonly', false);
+                $('#totalQuestions').prop('readonly', false);
+                $('#durationInfo').hide();
+                $('#questionsInfo').hide();
+            }
+        }
+
+        function showCETInfo() {
+            $('#cetQuestionCountsContent').html(`
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>PCM Group:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check-circle text-success"></i> Physics: 50 questions</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Chemistry: 50 questions</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Mathematics: 50 questions</li>
+                            <li><strong>Total: 150 questions</strong></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>PCB Group:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check-circle text-success"></i> Physics: 50 questions</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Chemistry: 50 questions</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Biology: 100 questions</li>
+                            <li><strong>Total: 200 questions</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            `);
+        }
+
+        function loadCETQuestionCounts(groupType) {
+            $.ajax({
+                url: '@Url.Action("GetCETQuestionCounts", "Tests")',
+                type: 'GET',
+                data: { groupType: groupType },
+                success: function(data) {
+                    updateCETFields(data);
+                    updateSubjectConfigurations(data);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading CET question counts:', error);
+                }
+            });
+        }
+
+        function updateCETFields(data) {
+            $('#totalQuestions').val(data.totalQuestions);
+            $('#durationMinutes').val(data.duration);
+            
+            // Update total marks to match total questions
+            $('#TotalMarks').val(data.totalQuestions);
+            
+            // Update the global variable
+            totalQuestionsFromStep1 = data.totalQuestions;
+        }
+
+        function updateSubjectConfigurations(data) {
+            // This will be called when subjects are loaded to apply CET question counts
+            if (subjects.length > 0) {
+                applyCETQuestionCounts(data.questionCounts);
+            }
+        }
+
+        function applyCETQuestionCounts(questionCounts) {
+            if (!questionCounts) return;
+            
+            // Update the subjects table with fixed question counts
+            $('.subject-questions').each(function() {
+                var subjectName = $(this).data('subject-name');
+                var fixedCount = questionCounts[subjectName];
+                
+                if (fixedCount !== undefined) {
+                    $(this).val(fixedCount).prop('readonly', true);
+                    
+                    // Remove any existing indicators first
+                    $(this).closest('td').find('.form-text').remove();
+                    
+                    // Add visual indicator that this is fixed
+                    $(this).closest('td').append(`
+                        <div class="form-text">
+                            <i class="bi bi-lock text-primary"></i> Fixed for CET
+                        </div>
+                    `);
+                } else {
+                    // For subjects not in the CET group, set to 0 and make readonly
+                    $(this).val(0).prop('readonly', true);
+                    
+                    // Remove any existing indicators first
+                    $(this).closest('td').find('.form-text').remove();
+                    
+                    // Add visual indicator that this is not included
+                    $(this).closest('td').append(`
+                        <div class="form-text">
+                            <i class="bi bi-x-circle text-muted"></i> Not included in selected group
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function validateSubjectCombination() {
+            var testType = $('#testTypeSelect').val();
+            
+            // Only validate for CET and JEE
+            if (testType != '0' && testType != '1') {
+                hideValidationError();
+                return true;
+            }
+            
+            var subjectConfigs = [];
+            $('.subject-questions').each(function() {
+                var subjectName = $(this).data('subject-name');
+                var count = parseInt($(this).val()) || 0;
+                
+                if (count > 0) {
+                    subjectConfigs.push({
+                        subjectName: subjectName,
+                        numberOfQuestions: count
+                    });
+                }
+            });
+            
+            // Client-side validation
+            var validationResult = validateCETJEESubjectsClientSide(subjectConfigs);
+            
+            if (!validationResult.isValid) {
+                showValidationError(validationResult.errorMessage);
+                return false;
+            } else {
+                hideValidationError();
+                return true;
+            }
+        }
+
+        function validateCETJEESubjectsClientSide(subjectConfigs) {
+            if (subjectConfigs.length === 0) {
+                return { isValid: false, errorMessage: "At least one subject must be selected for CET/JEE tests." };
+            }
+            
+            var selectedSubjects = subjectConfigs.map(sc => sc.subjectName.toLowerCase().trim());
+            
+            var hasPhysics = selectedSubjects.some(s => s.includes("physics"));
+            var hasChemistry = selectedSubjects.some(s => s.includes("chemistry"));
+            var hasMaths = selectedSubjects.some(s => s.includes("math") || s.includes("mathematics"));
+            var hasBiology = selectedSubjects.some(s => s.includes("biology"));
+            
+            if (!hasPhysics || !hasChemistry) {
+                return { 
+                    isValid: false, 
+                    errorMessage: "CET/JEE tests must include both Physics and Chemistry subjects." 
+                };
+            }
+            
+            if (hasMaths && hasBiology) {
+                return { 
+                    isValid: false, 
+                    errorMessage: "CET/JEE tests cannot include both Mathematics and Biology. Choose either Physics + Chemistry + Mathematics OR Physics + Chemistry + Biology." 
+                };
+            }
+            
+            if (!hasMaths && !hasBiology) {
+                return { 
+                    isValid: false, 
+                    errorMessage: "CET/JEE tests must include either Mathematics or Biology along with Physics and Chemistry." 
+                };
+            }
+            
+            return { isValid: true };
+        }
+
+        function showValidationError(message) {
+            $('#validationErrorMessage').text(message);
+            $('#subjectValidationError').show();
+        }
+
+        function hideValidationError() {
+            $('#subjectValidationError').hide();
         }
 
         function redistributeQuestionsAcrossSubjects() {
@@ -497,7 +835,41 @@
                 return validateStep1();
             } else if (currentStep === 2) {
                 return validateStep2();
+            } else if (currentStep === 5) {
+                return validateStep5();
             }
+            return true;
+        }
+
+        function validateStep5() {
+            // Validate that all required data is collected
+            collectSubjectConfigs();
+            
+            if (Object.keys(subjectConfigs).length === 0) {
+                showNotification('Please configure at least one subject with questions', 'error');
+                return false;
+            }
+            
+            if (Object.keys(selectedQuestions).length === 0) {
+                showNotification('Please select questions for at least one subject', 'error');
+                return false;
+            }
+            
+            // Check if all subjects have the required number of questions
+            var allComplete = true;
+            Object.keys(subjectConfigs).forEach(function(subjectId) {
+                var config = subjectConfigs[subjectId];
+                var selectedCount = getSelectedQuestionCount(subjectId);
+                if (selectedCount < config.numberOfQuestions) {
+                    allComplete = false;
+                }
+            });
+            
+            if (!allComplete) {
+                showNotification('Please complete question selection for all subjects', 'error');
+                return false;
+            }
+            
             return true;
         }
 
@@ -507,8 +879,9 @@
             var totalQuestions = $('#totalQuestions').val();
             var totalMarks = $('#TotalMarks').val();
             var passingMarks = $('#PassingMarks').val();
+            var testType = $('#testTypeSelect').val();
 
-            if (!title || !duration || !totalQuestions || !totalMarks || !passingMarks) {
+            if (!title || !duration || !totalQuestions || !totalMarks || !passingMarks || !testType) {
                 showNotification('Please fill in all required fields', 'error');
                 return false;
             }
@@ -516,6 +889,15 @@
             if (parseInt(passingMarks) > parseInt(totalMarks)) {
                 showNotification('Passing marks cannot be greater than total marks', 'error');
                 return false;
+            }
+
+            // For CET tests, validate group selection
+            if (testType == '0') { // CET
+                var groupSelection = $('#cetGroupSelect').val();
+                if (!groupSelection) {
+                    showNotification('Please select a group for CET test', 'error');
+                    return false;
+                }
             }
 
             // Update the global variable
@@ -539,6 +921,11 @@
 
             if (totalQuestions <= 0) {
                 showNotification('Please enter at least one question for at least one subject', 'error');
+                return false;
+            }
+
+            // Validate CET/JEE subject combinations
+            if (!validateSubjectCombination()) {
                 return false;
             }
 
@@ -570,6 +957,8 @@
                     };
                 }
             });
+            
+            console.log('Collected subject configs:', subjectConfigs);
         }
 
         function startQuestionSelection() {
@@ -1278,6 +1667,106 @@
             setTimeout(function() {
                 notification.alert('close');
             }, 5000);
+        }
+
+        function submitForm() {
+            console.log('submitForm called');
+            
+            // Collect all form data first
+            collectAllFormData();
+            
+            // Validate final step
+            if (!validateCurrentStep()) {
+                showNotification('Please complete all required fields before submitting', 'error');
+                return;
+            }
+            
+            // Show loading state
+            $('#submitBtn').prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Creating Test...');
+            
+            // Prevent the default form submission behavior
+            event.preventDefault();
+            
+            // Submit the form using AJAX to handle the response properly
+            var formData = $('#wizardForm').serialize();
+            
+            $.ajax({
+                url: $('#wizardForm').attr('action'),
+                type: 'POST',
+                data: formData,
+                success: function(response) {
+                    // If successful, redirect to the test list
+                    window.location.href = '@Url.Action("Index", "Tests")';
+                },
+                error: function(xhr, status, error) {
+                    console.error('Form submission error:', error);
+                    showNotification('Error creating test: ' + error, 'error');
+                    $('#submitBtn').prop('disabled', false).html('<i class="bi bi-check-circle"></i> Create Test');
+                }
+            });
+        }
+
+        function collectAllFormData() {
+            console.log('collectAllFormData called');
+            
+            // Collect subject configurations
+            collectSubjectConfigs();
+            
+            // Preserve question selections
+            preserveQuestionSelections();
+            
+            // Add hidden inputs for complex data
+            addHiddenInputs();
+            
+            console.log('Subject configs:', subjectConfigs);
+            console.log('Selected questions:', selectedQuestions);
+        }
+
+        function preserveQuestionSelections() {
+            // Ensure selectedQuestions is properly populated from all steps
+            if (Object.keys(selectedQuestions).length === 0) {
+                // Try to collect from all visible question checkboxes
+                $('.question-checkbox:checked').each(function() {
+                    var subjectId = $(this).data('subject-id');
+                    var questionId = parseInt($(this).val());
+                    
+                    if (!selectedQuestions[subjectId]) {
+                        selectedQuestions[subjectId] = [];
+                    }
+                    
+                    if (!selectedQuestions[subjectId].includes(questionId)) {
+                        selectedQuestions[subjectId].push(questionId);
+                    }
+                });
+            }
+        }
+
+        function addHiddenInputs() {
+            // Remove existing hidden inputs
+            $('#wizardForm input[name^="SubjectConfigs"]').remove();
+            $('#wizardForm input[name^="SelectedQuestionsBySubject"]').remove();
+            
+            // Add subject configurations as hidden inputs
+            var index = 0;
+            Object.keys(subjectConfigs).forEach(function(subjectId) {
+                var config = subjectConfigs[subjectId];
+                $('#wizardForm').append(`
+                    <input type="hidden" name="SubjectConfigs[${index}].SubjectId" value="${config.subjectId}" />
+                    <input type="hidden" name="SubjectConfigs[${index}].SubjectName" value="${config.subjectName}" />
+                    <input type="hidden" name="SubjectConfigs[${index}].NumberOfQuestions" value="${config.numberOfQuestions}" />
+                `);
+                index++;
+            });
+            
+            // Add selected questions as hidden inputs
+            Object.keys(selectedQuestions).forEach(function(subjectId) {
+                var questionIds = selectedQuestions[subjectId];
+                questionIds.forEach(function(questionId, questionIndex) {
+                    $('#wizardForm').append(`
+                        <input type="hidden" name="SelectedQuestionsBySubject[${subjectId}][${questionIndex}]" value="${questionId}" />
+                    `);
+                });
+            });
         }
     </script>
 

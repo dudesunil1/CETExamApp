@@ -1,0 +1,272 @@
+@model CETExamApp.Models.Test
+@{
+    ViewData["Title"] = "Test Instructions";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h2 class="mb-0">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        MHT-CET 2025 - Test Instructions
+                    </h2>
+                    <p class="mb-0 mt-2">Computer-Based Examination Interface</p>
+                </div>
+                
+                <div class="card-body p-5">
+                    <!-- General Instructions -->
+                    <div class="mb-5">
+                        <h4 class="text-primary mb-4">
+                            <i class="bi bi-list-ol me-2"></i>General Instructions:
+                        </h4>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="instruction-item mb-3">
+                                    <div class="d-flex align-items-start">
+                                        <span class="badge bg-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; min-width: 30px;">1</span>
+                                        <div>
+                                            <strong>Total duration of examination is 180 minutes.</strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="instruction-item mb-3">
+                                    <div class="d-flex align-items-start">
+                                        <span class="badge bg-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; min-width: 30px;">2</span>
+                                        <div>
+                                            <strong>The clock will be set at the server.</strong> The countdown timer in the top right corner of the screen will display the remaining time available for you to complete the examination. When the timer reaches zero, the examination will end by itself. You will not be required to end or submit your examination.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="instruction-item mb-3">
+                                    <div class="d-flex align-items-start">
+                                        <span class="badge bg-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; min-width: 30px;">3</span>
+                                        <div>
+                                            <strong>The Question Palette</strong> displayed on the right side of screen will show the status of each question using one of the following symbols:
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="instruction-item mb-3">
+                                    <div class="d-flex align-items-start">
+                                        <span class="badge bg-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; min-width: 30px;">4</span>
+                                        <div>
+                                            <strong>To answer a question, do the following:</strong>
+                                            <ul class="mt-2 mb-0">
+                                                <li><strong>a.</strong> Click on the question number in the Question Palette to go to that question directly.</li>
+                                                <li><strong>b.</strong> Select an answer for a multiple choice type question.</li>
+                                                <li><strong>c.</strong> Click on Save & Next to save your answer and go to the next question.</li>
+                                                <li><strong>d.</strong> Click on Review & Next to save your answer, mark it for review, and go to the next question.</li>
+                                            </ul>
+                                            <div class="alert alert-warning mt-2 mb-0">
+                                                <small><strong>Caution:</strong> Your answer for the current question will not be saved if you navigate to another question directly by clicking on its question number.</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="instruction-item mb-3">
+                                    <div class="d-flex align-items-start">
+                                        <span class="badge bg-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; min-width: 30px;">5</span>
+                                        <div>
+                                            <strong>You can view all the questions</strong> with options by clicking on the Question Paper button.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question Status Symbols -->
+                    <div class="mb-5">
+                        <h5 class="text-primary mb-3">Question Status Symbols:</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="question-status me-3 bg-light border rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">1</div>
+                                    <span><strong>Grey/White circle with '1':</strong> This question has not been visited yet.</span>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="question-status me-3 bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">2</div>
+                                    <span><strong>Red circle with '2':</strong> This question has been visited, but not answered.</span>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="question-status me-3 bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">3</div>
+                                    <span><strong>Green circle with '3':</strong> This question has been answered and will be considered for evaluation.</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="question-status me-3 bg-purple text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">4</div>
+                                    <span><strong>Purple circle with '4':</strong> This question has been marked for review and has not been answered.</span>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="question-status me-3 bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">5</div>
+                                    <span><strong>Blue circle with '5':</strong> This question has been answered and marked for review. This will be considered for evaluation.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Answering Procedure -->
+                    <div class="mb-5">
+                        <h5 class="text-primary mb-3">Procedure for answering a multiple choice type question:</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><strong>a.</strong> To select your answer, click on the button of one of the options.</li>
+                                    <li class="mb-2"><strong>b.</strong> To deselect your chosen answer, click on the button of the chosen option again or click on the Clear Response button.</li>
+                                    <li class="mb-2"><strong>c.</strong> To change your chosen answer, click on the button of another option.</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><strong>d.</strong> To save your answer, you MUST click on the Save & Next button.</li>
+                                    <li class="mb-2"><strong>e.</strong> To mark the question for review, click on the Review & Next button. If an answer is selected for a question that is Marked for Review, that answer will be considered in the evaluation.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Test Specific Information -->
+                    <div class="mb-5">
+                        <h5 class="text-primary mb-3">Test Information:</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="alert alert-info">
+                                    <h6><i class="bi bi-info-circle me-2"></i>Test Details:</h6>
+                                    <ul class="mb-0">
+                                        <li><strong>Test Name:</strong> @Model.Title</li>
+                                        <li><strong>Duration:</strong> 180 minutes (3 hours)</li>
+                                        <li><strong>Total Questions:</strong> @(Model.TestQuestions?.Count ?? 0)</li>
+                                        <li><strong>Total Marks:</strong> @Model.TotalMarks</li>
+                                        <li><strong>Passing Marks:</strong> @Model.PassingMarks</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="alert alert-warning">
+                                    <h6><i class="bi bi-exclamation-triangle me-2"></i>Important Notes:</h6>
+                                    <ul class="mb-0">
+                                        <li>There will be 150 questions for PCM group or 200 questions for PCB group</li>
+                                        <li>180 minutes duration will be given to attempt these questions</li>
+                                        <li>Each question is allocated 1 mark for each correct answer</li>
+                                        <li>0 marks will be deducted for incorrect response</li>
+                                        <li>There is only one correct answer for each question</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Language Selection -->
+                    <div class="mb-5">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">Choose your default language:</h6>
+                                <select class="form-select" id="languageSelect">
+                                    <option value="English" selected>English</option>
+                                    <option value="Hindi">Hindi</option>
+                                    <option value="Marathi">Marathi</option>
+                                </select>
+                                <div class="alert alert-danger mt-2">
+                                    <small><strong>Please note:</strong> All questions will appear in your default language. This language can be changed for a particular question later on.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Confirmation Checkbox -->
+                    <div class="mb-5">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="confirmationCheckbox" required>
+                            <label class="form-check-label" for="confirmationCheckbox">
+                                <strong>The computer provided to me is in proper working condition. I have read and understood the instructions given above.</strong>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary" onclick="goBack()">
+                            <i class="bi bi-arrow-left me-2"></i>Previous
+                        </button>
+                        <button type="button" class="btn btn-success btn-lg" id="beginTestBtn" disabled onclick="beginTest()">
+                            <i class="bi bi-play-fill me-2"></i>I am ready to begin
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .instruction-item {
+        padding: 15px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        border-left: 4px solid #007bff;
+    }
+    
+    .question-status {
+        font-weight: bold;
+        font-size: 14px;
+    }
+    
+    .bg-purple {
+        background-color: #6f42c1 !important;
+    }
+    
+    .card {
+        border-radius: 15px;
+    }
+    
+    .card-header {
+        border-radius: 15px 15px 0 0 !important;
+    }
+    
+    .alert {
+        border-radius: 10px;
+    }
+    
+    .btn {
+        border-radius: 8px;
+    }
+    
+    .form-check-input:checked {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkbox = document.getElementById('confirmationCheckbox');
+        const beginBtn = document.getElementById('beginTestBtn');
+        
+        checkbox.addEventListener('change', function() {
+            beginBtn.disabled = !this.checked;
+        });
+    });
+    
+    function goBack() {
+        window.history.back();
+    }
+    
+    function beginTest() {
+        if (document.getElementById('confirmationCheckbox').checked) {
+            // Redirect to the actual test
+            window.location.href = '@Url.Action("TakeTest", "Student", new { id = Model.Id })';
+        } else {
+            alert('Please confirm that you have read and understood the instructions.');
+        }
+    }
+</script>

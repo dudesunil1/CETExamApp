@@ -25,6 +25,7 @@ namespace CETExamApp.Data
         public DbSet<ExamCenterConfig> ExamCenterConfigs { get; set; }
         public DbSet<TestAttempt> TestAttempts { get; set; }
         public DbSet<ApiKey> ApiKeys { get; set; }
+        public DbSet<TestSchedule> TestSchedules { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -138,6 +139,18 @@ namespace CETExamApp.Data
                 .WithMany()
                 .HasForeignKey(ta => ta.TestId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<TestSchedule>()
+                .HasOne(ts => ts.Test)
+                .WithMany()
+                .HasForeignKey(ts => ts.TestId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<TestAllocation>()
+                .HasOne(ta => ta.TestSchedule)
+                .WithMany(ts => ts.TestAllocations)
+                .HasForeignKey(ta => ta.ScheduleId)
+                .OnDelete(DeleteBehavior.SetNull);
 
         }
     }

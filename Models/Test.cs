@@ -11,6 +11,13 @@ namespace CETExamApp.Models
         Cancelled
     }
 
+    public enum TestType
+    {
+        CET,
+        JEE,
+        Exercise
+    }
+
     public class Test
     {
         public int Id { get; set; }
@@ -25,6 +32,10 @@ namespace CETExamApp.Models
 
         [Display(Name = "Class")]
         public int? ClassId { get; set; }
+
+        [Required]
+        [Display(Name = "Test Type")]
+        public TestType TestType { get; set; } = TestType.CET;
 
         [Required]
         [Range(1, 1440)]
@@ -50,7 +61,7 @@ namespace CETExamApp.Models
         [Display(Name = "Show Results Immediately")]
         public bool ShowResultsImmediately { get; set; } = false;
 
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now.AddHours(5.5); // IST default
 
         public string? CreatedBy { get; set; }
 

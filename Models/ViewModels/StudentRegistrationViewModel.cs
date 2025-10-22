@@ -49,6 +49,10 @@ namespace CETExamApp.Models.ViewModels
         public string? Email { get; set; }
 
         [Required]
+        [Display(Name = "Gender")]
+        public string Gender { get; set; } = "Male";
+
+        [Required]
         [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
         [DataType(DataType.Password)]
         [Display(Name = "Password")]
@@ -108,8 +112,30 @@ namespace CETExamApp.Models.ViewModels
         [Display(Name = "Email")]
         public string? Email { get; set; }
 
+        [Required]
+        [Display(Name = "Gender")]
+        public string Gender { get; set; } = "Male";
+
         [Display(Name = "Active")]
         public bool IsActive { get; set; } = true;
+    }
+
+    public class ChangePasswordViewModel
+    {
+        public string Id { get; set; } = string.Empty;
+        
+        public string StudentName { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [DataType(DataType.Password)]
+        [Display(Name = "New Password")]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm New Password")]
+        [Compare("NewPassword", ErrorMessage = "The password and confirmation password do not match.")]
+        public string ConfirmPassword { get; set; } = string.Empty;
     }
 }
 

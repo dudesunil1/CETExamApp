@@ -35,6 +35,10 @@ namespace CETExamApp.Models.ViewModels
         [Required(ErrorMessage = "Class is required.")]
         public int ClassId { get; set; }
 
+        [Required(ErrorMessage = "Test Type is required.")]
+        [Display(Name = "Test Type")]
+        public TestType TestType { get; set; } = TestType.CET;
+
         public List<SubjectConfigViewModel> SubjectConfigs { get; set; } = new List<SubjectConfigViewModel>();
 
         // Step 3 & 4: Question Selection

@@ -1,4 +1,5 @@
 @model CETExamApp.Models.Test
+@using CETExamApp.Helpers
 @{
     ViewData["Title"] = "Test Details";
 }
@@ -162,7 +163,7 @@
                         <strong>Created By:</strong> @Model.CreatedBy
                     </div>
                     <div class="col-md-4">
-                        <strong>Created Date:</strong> @Model.CreatedDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                        <strong>Created Date:</strong> @Model.CreatedDate.ToISTString() IST
                     </div>
                 </div>
 

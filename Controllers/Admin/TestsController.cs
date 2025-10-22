@@ -1,6 +1,7 @@
 using CETExamApp.Data;
 using CETExamApp.Models;
 using CETExamApp.Models.ViewModels;
+using CETExamApp.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -44,10 +45,11 @@ namespace CETExamApp.Controllers.Admin
         {
             var model = new TestCreationWizardViewModel
             {
-                DurationMinutes = 60,
-                TotalQuestions = 20,
-                TotalMarks = 100,
-                PassingMarks = 50
+                DurationMinutes = 180, // Default to 3 hours for CET
+                TotalQuestions = 200, // Default total for CET (50+50+100)
+                TotalMarks = 200,
+                PassingMarks = 100,
+                TestType = TestType.CET // Default to CET
             };
 
             ViewData["ClassId"] = new SelectList(await _context.Classes.Where(c => c.IsActive).ToListAsync(), "Id", "Name");
@@ -58,38 +60,90 @@ namespace CETExamApp.Controllers.Admin
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateWizard(TestCreationWizardViewModel model)
         {
-            if (ModelState.IsValid)
+            try
             {
-                // No need to set SubjectId or GroupId as they are removed from the model
-                
-                var test = new Test
+                _logger.LogInformation("CreateWizard called with model: Title={Title}, TestType={TestType}, ClassId={ClassId}", 
+                    model.Title, model.TestType, model.ClassId);
+
+                // Log model state
+                if (!ModelState.IsValid)
                 {
-                    Title = model.Title,
-                    Description = model.Description,
-                    DurationMinutes = model.DurationMinutes,
-                    TotalMarks = model.TotalMarks,
-                    PassingMarks = model.PassingMarks,
-                    ClassId = model.ClassId,
-                    ShuffleQuestions = model.ShuffleQuestions,
-                    ShowResultsImmediately = true,
-                    AllowLateSubmission = false,
-                    Status = model.Status,
-                    CreatedDate = DateTime.UtcNow,
-                    CreatedBy = User.Identity?.Name
-                };
+                    _logger.LogWarning("ModelState is invalid. Errors: {Errors}", 
+                        string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
+                }
 
-                _context.Tests.Add(test);
-                await _context.SaveChangesAsync();
+                // For CET tests, enforce fixed values
+                if (model.TestType == TestType.CET)
+                {
+                    model.DurationMinutes = 180; // Fixed 3 hours
+                    
+                    // Calculate total questions based on subject configs
+                    if (model.SubjectConfigs != null && model.SubjectConfigs.Any())
+                    {
+                        model.TotalQuestions = model.SubjectConfigs.Sum(sc => sc.NumberOfQuestions);
+                        model.TotalMarks = model.TotalQuestions; // Assuming 1 mark per question
+                    }
+                }
 
-                // Save subject configurations and questions
-                await SaveTestQuestions(test.Id, model.SelectedQuestionsBySubject, model.SubjectConfigs);
+                // Validate CET/JEE subject combinations
+                if (model.TestType == TestType.CET || model.TestType == TestType.JEE)
+                {
+                    var validationResult = ValidateCETJEESubjectCombination(model.SubjectConfigs);
+                    if (!validationResult.IsValid)
+                    {
+                        ModelState.AddModelError("SubjectConfigs", validationResult.ErrorMessage);
+                    }
+                }
 
-                TempData["Success"] = "Test created successfully!";
-                return RedirectToAction("Index");
+                if (ModelState.IsValid)
+                {
+                    _logger.LogInformation("ModelState is valid, creating test...");
+                    
+                    // No need to set SubjectId or GroupId as they are removed from the model
+                    
+                    var test = new Test
+                    {
+                        Title = model.Title,
+                        Description = model.Description,
+                        DurationMinutes = model.DurationMinutes,
+                        TotalMarks = model.TotalMarks,
+                        PassingMarks = model.PassingMarks,
+                        ClassId = model.ClassId,
+                        TestType = model.TestType,
+                        ShuffleQuestions = model.ShuffleQuestions,
+                        ShowResultsImmediately = true,
+                        AllowLateSubmission = false,
+                        Status = model.Status,
+                        CreatedDate = DateTimeExtensions.NowIST(),
+                        CreatedBy = User.Identity?.Name
+                    };
+
+                    _context.Tests.Add(test);
+                    await _context.SaveChangesAsync();
+
+                    _logger.LogInformation("Test created successfully with ID: {TestId}", test.Id);
+
+                    // Save subject configurations and questions
+                    await SaveTestQuestions(test.Id, model.SelectedQuestionsBySubject, model.SubjectConfigs);
+
+                    TempData["Success"] = "Test created successfully!";
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    _logger.LogWarning("ModelState validation failed. Returning to view with errors.");
+                }
+
+                ViewData["ClassId"] = new SelectList(await _context.Classes.Where(c => c.IsActive).ToListAsync(), "Id", "Name");
+                return View(model);
             }
-
-            ViewData["ClassId"] = new SelectList(await _context.Classes.Where(c => c.IsActive).ToListAsync(), "Id", "Name");
-            return View(model);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in CreateWizard action");
+                TempData["Error"] = "An error occurred while creating the test: " + ex.Message;
+                ViewData["ClassId"] = new SelectList(await _context.Classes.Where(c => c.IsActive).ToListAsync(), "Id", "Name");
+                return View(model);
+            }
         }
 
         private async Task SaveTestQuestions(int testId, Dictionary<int, List<int>> selectedQuestions, List<SubjectConfigViewModel> subjectConfigs)
@@ -117,6 +171,100 @@ namespace CETExamApp.Controllers.Admin
             }
 
             await _context.SaveChangesAsync();
+        }
+
+        private ValidationResult ValidateCETJEESubjectCombination(List<SubjectConfigViewModel> subjectConfigs)
+        {
+            // Get subjects with questions > 0
+            var selectedSubjects = subjectConfigs
+                .Where(sc => sc.NumberOfQuestions > 0)
+                .Select(sc => sc.SubjectName.ToLower().Trim())
+                .ToList();
+
+            if (selectedSubjects.Count == 0)
+            {
+                return new ValidationResult { IsValid = false, ErrorMessage = "At least one subject must be selected for CET/JEE tests." };
+            }
+
+            // Check for Physics and Chemistry (required for both combinations)
+            var hasPhysics = selectedSubjects.Any(s => s.Contains("physics"));
+            var hasChemistry = selectedSubjects.Any(s => s.Contains("chemistry"));
+            var hasMaths = selectedSubjects.Any(s => s.Contains("math") || s.Contains("mathematics"));
+            var hasBiology = selectedSubjects.Any(s => s.Contains("biology"));
+
+            if (!hasPhysics || !hasChemistry)
+            {
+                return new ValidationResult 
+                { 
+                    IsValid = false, 
+                    ErrorMessage = "CET/JEE tests must include both Physics and Chemistry subjects." 
+                };
+            }
+
+            // Check for valid combinations
+            if (hasMaths && hasBiology)
+            {
+                return new ValidationResult 
+                { 
+                    IsValid = false, 
+                    ErrorMessage = "CET/JEE tests cannot include both Mathematics and Biology. Choose either Physics + Chemistry + Mathematics OR Physics + Chemistry + Biology." 
+                };
+            }
+
+            if (!hasMaths && !hasBiology)
+            {
+                return new ValidationResult 
+                { 
+                    IsValid = false, 
+                    ErrorMessage = "CET/JEE tests must include either Mathematics or Biology along with Physics and Chemistry." 
+                };
+            }
+
+            return new ValidationResult { IsValid = true };
+        }
+
+        [HttpPost]
+        public IActionResult ValidateSubjectCombination(int testType, List<SubjectConfigViewModel> subjectConfigs)
+        {
+            if (testType == (int)TestType.CET || testType == (int)TestType.JEE)
+            {
+                var validationResult = ValidateCETJEESubjectCombination(subjectConfigs);
+                return Json(validationResult);
+            }
+            
+            return Json(new ValidationResult { IsValid = true });
+        }
+
+        [HttpGet]
+        public IActionResult GetCETQuestionCounts(string groupType)
+        {
+            var questionCounts = new Dictionary<string, int>();
+            
+            if (groupType?.ToUpper() == "PCM")
+            {
+                questionCounts = new Dictionary<string, int>
+                {
+                    { "Physics", 50 },
+                    { "Chemistry", 50 },
+                    { "Mathematics", 50 }
+                };
+            }
+            else if (groupType?.ToUpper() == "PCB")
+            {
+                questionCounts = new Dictionary<string, int>
+                {
+                    { "Physics", 50 },
+                    { "Chemistry", 50 },
+                    { "Biology", 100 }
+                };
+            }
+            
+            return Json(new
+            {
+                questionCounts = questionCounts,
+                totalQuestions = questionCounts.Values.Sum(),
+                duration = 180 // Fixed 3 hours for CET
+            });
         }
 
         [HttpPost]
@@ -641,10 +789,10 @@ namespace CETExamApp.Controllers.Admin
                     {
                         TestId = testId,
                         StudentId = studentId,
-                        ScheduledStartTime = DateTime.UtcNow.AddHours(1), // Default to 1 hour ahead
-                        ScheduledEndTime = DateTime.UtcNow.AddHours(2), // Default to 2 hours ahead
+                        ScheduledStartTime = DateTimeExtensions.NowIST().AddHours(1), // Default to 1 hour ahead in IST
+                        ScheduledEndTime = DateTimeExtensions.NowIST().AddHours(2), // Default to 2 hours ahead in IST
                         AllocatedBy = User.Identity?.Name,
-                        AllocatedDate = DateTime.UtcNow
+                        AllocatedDate = DateTimeExtensions.NowIST()
                     };
                     
                     _context.TestAllocations.Add(allocation);

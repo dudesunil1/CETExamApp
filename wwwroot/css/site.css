@@ -13,6 +13,7 @@
   --danger-color: #e74a3b;
   --light-color: #f8f9fc;
   --dark-color: #5a5c69;
+  --purple-color: #6f42c1;
   
   /* Gradients */
   --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -622,5 +623,14 @@ h1, h2, h3, h4, h5, h6 {
 .bg-gradient-danger {
   background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
   color: white;
+}
+
+/* Purple utility class */
+.bg-purple {
+  background-color: var(--purple-color) !important;
+}
+
+.text-purple {
+  color: var(--purple-color) !important;
 }
 

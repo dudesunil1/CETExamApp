@@ -1,4 +1,5 @@
 @model CETExamApp.Models.ViewModels.StudentResultViewModel
+@using CETExamApp.Helpers
 @{
     ViewData["Title"] = "Student-wise Test Result";
 }
@@ -192,7 +193,7 @@
                                 <tr>
                                     <td>@result.Test?.Title</td>
                                     <td><span class="badge bg-info">@result.Test?.Class?.Name</span></td>
-                                    <td>@result.SubmittedAt?.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                                    <td>@result.SubmittedAt?.ToISTString() IST</td>
                                     <td>@result.ObtainedMarks</td>
                                     <td>@result.TotalMarks</td>
                                     <td>@result.Percentage.ToString("0.00")%</td>

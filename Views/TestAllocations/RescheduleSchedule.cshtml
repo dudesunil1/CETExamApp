@@ -1,0 +1,131 @@
+@model CETExamApp.Models.TestSchedule
+@using CETExamApp.Helpers
+@{
+    ViewData["Title"] = "Reschedule Test";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-white">
+                <h4 class="mb-0"><i class="bi bi-calendar-event"></i> Reschedule Test</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <strong>Test:</strong> @Model.Test?.Title<br/>
+                    <strong>Schedule ID:</strong> @Model.Id<br/>
+                    <strong>Current Start Time:</strong> @Model.ScheduledStartTime.ToIST().ToString("dd/MM/yyyy HH:mm") IST<br/>
+                    <strong>Current End Time:</strong> @Model.ScheduledEndTime.ToIST().ToString("dd/MM/yyyy HH:mm") IST
+                </div>
+
+                <form id="rescheduleForm">
+                    <input type="hidden" id="scheduleId" value="@Model.Id" />
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">New Start Time <small class="text-muted">(IST)</small></label>
+                                <input type="datetime-local" id="newStartTime" class="form-control" required />
+                                <div class="form-text">Time will be displayed in Indian Standard Time</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">New End Time <small class="text-muted">(IST)</small></label>
+                                <input type="datetime-local" id="newEndTime" class="form-control" required />
+                                <div class="form-text">Automatically calculated based on test duration</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Warning:</strong> Changing the schedule will update all student allocations for this test schedule.
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-secondary me-md-2" onclick="window.close()">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-calendar-event"></i> Update Schedule
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default values
+            const currentStartTime = '@Model.ScheduledStartTime.ToIST().ToString("yyyy-MM-ddTHH:mm")';
+            const currentEndTime = '@Model.ScheduledEndTime.ToIST().ToString("yyyy-MM-ddTHH:mm")';
+            
+            document.getElementById('newStartTime').value = currentStartTime;
+            document.getElementById('newEndTime').value = currentEndTime;
+            
+            // Handle form submission
+            document.getElementById('rescheduleForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const scheduleId = document.getElementById('scheduleId').value;
+                const newStartTime = document.getElementById('newStartTime').value;
+                const newEndTime = document.getElementById('newEndTime').value;
+                
+                if (!newStartTime || !newEndTime) {
+                    alert('Please fill in both start and end times.');
+                    return;
+                }
+                
+                if (confirm('Are you sure you want to update this schedule? This will affect all students allocated to this schedule.')) {
+                    updateSchedule(scheduleId, newStartTime, newEndTime);
+                }
+            });
+            
+            // Auto-calculate end time when start time changes
+            document.getElementById('newStartTime').addEventListener('change', function() {
+                const startTime = new Date(this.value);
+                const duration = @Model.Test?.DurationMinutes ?? 60; // Default 60 minutes if not available
+                const endTime = new Date(startTime.getTime() + (duration * 60 * 1000));
+                
+                document.getElementById('newEndTime').value = endTime.toISOString().slice(0, 16);
+            });
+        });
+        
+        async function updateSchedule(scheduleId, startTime, endTime) {
+            try {
+                const response = await fetch(`/TestAllocations/UpdateSchedule`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({
+                        scheduleId: parseInt(scheduleId),
+                        scheduledStartTime: startTime,
+                        scheduledEndTime: endTime
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('Schedule updated successfully!');
+                        window.opener.loadTestSchedules(); // Refresh parent window
+                        window.close();
+                    } else {
+                        alert('Error: ' + result.message);
+                    }
+                } else {
+                    alert('Error updating schedule. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error updating schedule. Please try again.');
+            }
+        }
+    </script>
+}

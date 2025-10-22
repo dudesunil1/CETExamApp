@@ -6,9 +6,11 @@ namespace CETExamApp.Models
 
         public int TestId { get; set; }
 
+        public int? ScheduleId { get; set; }
+
         public string StudentId { get; set; } = string.Empty;
 
-        public DateTime AllocatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime AllocatedDate { get; set; } = DateTime.Now.AddHours(5.5); // IST default
 
         public DateTime? ScheduledStartTime { get; set; }
 
@@ -23,6 +25,7 @@ namespace CETExamApp.Models
         // Navigation properties
         public virtual Test? Test { get; set; }
         public virtual ApplicationUser? Student { get; set; }
+        public virtual TestSchedule? TestSchedule { get; set; }
     }
 }
 

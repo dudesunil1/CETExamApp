@@ -1,4 +1,5 @@
 @using CETExamApp.Models
+@using CETExamApp.Helpers
 @{
     ViewData["Title"] = "Allocate Test to Students or Groups";
     var allStudents = ViewBag.AllStudents as List<ApplicationUser>;
@@ -41,6 +42,8 @@
                     </li>
                 </ul>
 
+                @Html.AntiForgeryToken()
+
                 <div class="tab-content" id="allocationTabsContent">
                     <!-- Group Allocation Tab -->
                     <div class="tab-pane fade show active" id="group-allocation">
@@ -57,23 +60,55 @@
                             </div>
 
                             <div class="form-floating mb-3">
-                                <select name="groupId" class="form-select" asp-items="ViewBag.Groups" required>
+                                <select name="groupId" class="form-select" asp-items="ViewBag.Groups" required id="groupSelectGroup">
                                     <option value="">-- Select Group --</option>
                                 </select>
                                 <label>Group (PCMB/PCB/PCM)</label>
                             </div>
 
+                            <!-- View Students Button -->
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-outline-info" id="viewGroupStudents" disabled>
+                                    <i class="bi bi-eye"></i> View Students in Selected Group
+                                </button>
+                            </div>
+
+                            <!-- Group Students Display -->
+                            <div id="groupStudentsSection" class="mb-3" style="display: none;">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-primary mb-3">
+                                        <i class="bi bi-people"></i> Students in Selected Group
+                                    </h6>
+                                    <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                        <table class="table table-sm table-hover" id="groupStudentsTable">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Student ID</th>
+                                                    <th>Name</th>
+                                                    <th>Class</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="groupStudentsTableBody">
+                                                <!-- Students will be populated here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label class="form-label">Scheduled Start Time (Optional)</label>
-                                        <input type="datetime-local" name="scheduledStartTime" class="form-control" />
+                                        <label class="form-label">Scheduled Start Time <small class="text-muted">(IST)</small></label>
+                                        <input type="datetime-local" name="scheduledStartTime" class="form-control" id="startTimeGroup" required />
+                                        <div class="form-text">Time will be displayed in Indian Standard Time</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label class="form-label">Scheduled End Time (Optional)</label>
-                                        <input type="datetime-local" name="scheduledEndTime" class="form-control" />
+                                        <label class="form-label">Scheduled End Time <small class="text-muted">(IST)</small></label>
+                                        <input type="datetime-local" name="scheduledEndTime" class="form-control" id="endTimeGroup" readonly />
+                                        <div class="form-text">Automatically calculated based on test duration</div>
                                     </div>
                                 </div>
                             </div>
@@ -82,6 +117,37 @@
                                 <button type="submit" class="btn btn-primary btn-lg">
                                     <i class="bi bi-people-fill"></i> Allocate to Group
                                 </button>
+                            </div>
+
+                            <!-- Review Allocated Students Section -->
+                            <div id="reviewAllocatedStudentsSection" class="mt-4" style="display: none;">
+                                <hr class="my-4" />
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="mb-0 text-success">
+                                        <i class="bi bi-check-circle"></i> Review Allocated Students
+                                    </h6>
+                                    <span class="badge bg-info" id="allocatedStudentsCount">0 students</span>
+                                </div>
+                                
+                                <!-- Allocated Students Table -->
+                                <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                                    <table class="table table-sm table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Student ID</th>
+                                                <th>Name</th>
+                                                <th>Class</th>
+                                                <th width="120">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="allocatedStudentsTable">
+                                            <!-- Allocated students will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <!-- Hidden input to store allocated student IDs -->
+                                <input type="hidden" name="allocatedStudentIds" id="allocatedStudentIds" />
                             </div>
                         </form>
                     </div>
@@ -102,20 +168,68 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Select Students</label>
-                                <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
-                                    @if (allStudents != null && allStudents.Any())
-                                    {
-                                        @foreach (var student in allStudents)
+                                
+                                <!-- Student Selection Section -->
+                                <div id="studentSelectionSection">
+                                    <!-- Search Box -->
+                                    <div class="mb-3">
+                                        <input type="text" id="studentSearch" class="form-control" placeholder="Search students by name..." />
+                                    </div>
+
+                                    <!-- Students Table -->
+                                    <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
+                                        @if (ViewBag.StudentsByClass != null && ((IEnumerable<IGrouping<string, CETExamApp.Models.ApplicationUser>>)ViewBag.StudentsByClass).Any())
                                         {
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="studentIds" value="@student.Id" id="student_@student.Id">
-                                                <label class="form-check-label" for="student_@student.Id">
-                                                    @student.FirstName @student.LastName (@student.Email)
+                                            @foreach (var classGroup in ViewBag.StudentsByClass)
+                                            {
+                                                <div class="mb-4">
+                                                    <h6 class="text-primary border-bottom pb-2 mb-3">@classGroup.Key</h6>
+                                                    <div class="table-responsive">
+                                                        <table class="table table-sm table-hover student-table" data-class="@classGroup.Key">
+                                                            <thead class="table-light">
+                                                                <tr>
+                                                                    <th width="30">
+                                                                        <input type="checkbox" class="form-check-input select-all" data-class="@classGroup.Key" />
+                                                                    </th>
+                                                                    <th>Student ID</th>
+                                                                    <th>Name</th>
+                                                                    <th>Group</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @foreach (var student in classGroup)
+                                                                {
+                                                                    <tr class="student-row" data-name="@($"{student.FirstName} {student.LastName}".ToLower())">
+                                                                        <td>
+                                                                            <input type="checkbox" class="form-check-input student-checkbox" name="studentIds" value="@student.Id" id="student_@student.Id">
+                                                                        </td>
+                                                                        <td>
+                                                                            <label for="student_@student.Id" class="form-check-label">
+                                                                                @student.StudentUsername
+                                                                            </label>
+                                                                        </td>
+                                                                        <td>
+                                                                            <label for="student_@student.Id" class="form-check-label">
+                                                                                @student.FirstName @student.LastName
+                                                                            </label>
+                                                                        </td>
+                                                                        <td>
+                                                                            <label for="student_@student.Id" class="form-check-label">
                                                     @if (student.Group != null)
                                                     {
                                                         <span class="badge bg-info">@student.Group.Name</span>
                                                     }
+                                                                                else
+                                                                                {
+                                                                                    <span class="text-muted">No Group</span>
+                                                    }
                                                 </label>
+                                                                        </td>
+                                                                    </tr>
+                                                                }
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
                                             </div>
                                         }
                                     }
@@ -123,26 +237,68 @@
                                     {
                                         <p class="text-muted">No students available. All students may already be allocated.</p>
                                     }
+                                    </div>
+                                    
+                                    <!-- Continue Button -->
+                                    <div class="mt-3">
+                                        <button type="button" class="btn btn-primary" id="continueToReview">
+                                            <i class="bi bi-arrow-right"></i> Continue to Review
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Review Section -->
+                                <div id="reviewSection" style="display: none;">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="mb-0 text-success">
+                                            <i class="bi bi-check-circle"></i> Selected Students Review
+                                        </h6>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" id="addMoreStudents">
+                                            <i class="bi bi-plus-circle"></i> Add Student
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Selected Students Table -->
+                                    <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                                        <table class="table table-sm table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Student ID</th>
+                                                    <th>Name</th>
+                                                    <th>Group</th>
+                                                    <th width="100">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="selectedStudentsTable">
+                                                <!-- Selected students will be populated here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <!-- Hidden input to store selected student IDs -->
+                                    <input type="hidden" name="selectedStudentIds" id="selectedStudentIds" />
                                 </div>
                             </div>
 
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label class="form-label">Scheduled Start Time (Optional)</label>
-                                        <input type="datetime-local" name="scheduledStartTime" class="form-control" />
+                                        <label class="form-label">Scheduled Start Time <small class="text-muted">(IST)</small></label>
+                                        <input type="datetime-local" name="scheduledStartTime" class="form-control" id="startTimeStudent" required />
+                                        <div class="form-text">Time will be displayed in Indian Standard Time</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label class="form-label">Scheduled End Time (Optional)</label>
-                                        <input type="datetime-local" name="scheduledEndTime" class="form-control" />
+                                        <label class="form-label">Scheduled End Time <small class="text-muted">(IST)</small></label>
+                                        <input type="datetime-local" name="scheduledEndTime" class="form-control" id="endTimeStudent" readonly />
+                                        <div class="form-text">Automatically calculated based on test duration</div>
                                     </div>
                                 </div>
                             </div>
                             
                             <div class="d-grid">
-                                <button type="submit" class="btn btn-primary btn-lg">
+                                <button type="submit" class="btn btn-primary btn-lg" id="submitAllocation">
                                     <i class="bi bi-person-check-fill"></i> Allocate to Selected Students
                                 </button>
                             </div>
@@ -150,7 +306,7 @@
                     </div>
                 </div>
 
-                <div class="mt-3">
+                <div class="mt-3 d-flex justify-content-between">
                     <a asp-action="Index" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> Back to Allocations List
                     </a>
@@ -162,14 +318,526 @@
 
 @section Scripts {
     <script>
-        // Auto-populate schedule from test if available
-        document.getElementById('testSelectGroup')?.addEventListener('change', populateScheduleFromTest);
-        document.getElementById('testSelectStudent')?.addEventListener('change', populateScheduleFromTest);
-        
-        function populateScheduleFromTest(e) {
-            // This would ideally fetch test details via AJAX and populate start/end times
-            console.log('Test selected:', e.target.value);
+        // Initialize time fields when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTimeFields();
+            initializeStudentSearch();
+            initializeSelectAll();
+            initializeReviewWorkflow();
+            initializeFormSubmission();
+            initializeGroupAllocation();
+            
+            // Add event listeners for test selection changes
+            document.getElementById('testSelectGroup')?.addEventListener('change', function() {
+                updateEndTimeForGroup();
+            });
+            
+            document.getElementById('testSelectStudent')?.addEventListener('change', function() {
+                updateEndTimeForStudent();
+            });
+            
+            // Add event listeners for start time changes
+            document.getElementById('startTimeGroup')?.addEventListener('change', function() {
+                updateEndTimeForGroup();
+            });
+            
+            document.getElementById('startTimeStudent')?.addEventListener('change', function() {
+                updateEndTimeForStudent();
+            });
+        });
+
+        function initializeTimeFields() {
+            // Set default start time (1 hour ahead, rounded to next 10-minute interval)
+            const defaultStartTime = getDefaultStartTime();
+            
+            // Set for both forms
+            const startTimeGroup = document.getElementById('startTimeGroup');
+            const startTimeStudent = document.getElementById('startTimeStudent');
+            
+            if (startTimeGroup) {
+                startTimeGroup.value = defaultStartTime;
+            }
+            
+            if (startTimeStudent) {
+                startTimeStudent.value = defaultStartTime;
+            }
         }
+
+        function getDefaultStartTime() {
+            // Get current IST time directly
+            const now = new Date();
+            
+            // Add 1 hour to current time
+            const oneHourLater = new Date(now.getTime() + (60 * 60 * 1000));
+            
+            // Round to next 10-minute interval
+            const minutes = oneHourLater.getMinutes();
+            const roundedMinutes = Math.ceil(minutes / 10) * 10;
+            
+            oneHourLater.setMinutes(roundedMinutes);
+            
+            // If we went over 60 minutes, increment hour and reset minutes
+            if (roundedMinutes >= 60) {
+                oneHourLater.setHours(oneHourLater.getHours() + 1);
+                oneHourLater.setMinutes(0);
+            }
+            
+            // Format for datetime-local input (YYYY-MM-DDTHH:MM)
+            const year = oneHourLater.getFullYear();
+            const month = String(oneHourLater.getMonth() + 1).padStart(2, '0');
+            const day = String(oneHourLater.getDate()).padStart(2, '0');
+            const hours = String(oneHourLater.getHours()).padStart(2, '0');
+            const mins = String(oneHourLater.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day}T${hours}:${mins}`;
+        }
+
+        function updateEndTimeForGroup() {
+            const testSelect = document.getElementById('testSelectGroup');
+            const startTimeInput = document.getElementById('startTimeGroup');
+            const endTimeInput = document.getElementById('endTimeGroup');
+            
+            if (testSelect && startTimeInput && endTimeInput && testSelect.value) {
+                updateEndTime(testSelect.value, startTimeInput.value, endTimeInput);
+            }
+        }
+
+        function updateEndTimeForStudent() {
+            const testSelect = document.getElementById('testSelectStudent');
+            const startTimeInput = document.getElementById('startTimeStudent');
+            const endTimeInput = document.getElementById('endTimeStudent');
+            
+            if (testSelect && startTimeInput && endTimeInput && testSelect.value) {
+                updateEndTime(testSelect.value, startTimeInput.value, endTimeInput);
+            }
+        }
+
+        async function updateEndTime(testId, startTime, endTimeInput) {
+            try {
+                // Fetch test duration from server
+                const response = await fetch(`/TestAllocations/GetTestDuration?testId=${testId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const durationMinutes = data.durationMinutes;
+                    
+                    // Calculate end time in IST
+                    const startDateTime = new Date(startTime);
+                    const endDateTime = new Date(startDateTime.getTime() + (durationMinutes * 60 * 1000));
+                    
+                    // Format for datetime-local input
+                    const year = endDateTime.getFullYear();
+                    const month = String(endDateTime.getMonth() + 1).padStart(2, '0');
+                    const day = String(endDateTime.getDate()).padStart(2, '0');
+                    const hours = String(endDateTime.getHours()).padStart(2, '0');
+                    const mins = String(endDateTime.getMinutes()).padStart(2, '0');
+                    
+                    endTimeInput.value = `${year}-${month}-${day}T${hours}:${mins}`;
+                }
+            } catch (error) {
+                console.error('Error fetching test duration:', error);
+                // Fallback: add 60 minutes if we can't get test duration
+                const startDateTime = new Date(startTime);
+                const endDateTime = new Date(startDateTime.getTime() + (60 * 60 * 1000));
+                
+                // Format for datetime-local input
+                const year = endDateTime.getFullYear();
+                const month = String(endDateTime.getMonth() + 1).padStart(2, '0');
+                const day = String(endDateTime.getDate()).padStart(2, '0');
+                const hours = String(endDateTime.getHours()).padStart(2, '0');
+                const mins = String(endDateTime.getMinutes()).padStart(2, '0');
+                
+                endTimeInput.value = `${year}-${month}-${day}T${hours}:${mins}`;
+            }
+        }
+
+        // Student search functionality
+        function initializeStudentSearch() {
+            const searchInput = document.getElementById('studentSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const studentRows = document.querySelectorAll('.student-row');
+                    
+                    studentRows.forEach(function(row) {
+                        const studentName = row.getAttribute('data-name');
+                        if (studentName.includes(searchTerm)) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                    
+                    // Hide/show class sections based on visible students
+                    const classSections = document.querySelectorAll('.student-table');
+                    classSections.forEach(function(table) {
+                        const visibleRows = table.querySelectorAll('tbody tr[style=""], tbody tr:not([style*="none"])');
+                        const classSection = table.closest('.mb-4');
+                        if (visibleRows.length === 0) {
+                            classSection.style.display = 'none';
+                        } else {
+                            classSection.style.display = '';
+                        }
+                    });
+                });
+            }
+        }
+
+        // Select all functionality
+        function initializeSelectAll() {
+            const selectAllCheckboxes = document.querySelectorAll('.select-all');
+            
+            selectAllCheckboxes.forEach(function(selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    const className = this.getAttribute('data-class');
+                    const table = document.querySelector(`.student-table[data-class="${className}"]`);
+                    const studentCheckboxes = table.querySelectorAll('.student-checkbox');
+                    
+                    studentCheckboxes.forEach(function(checkbox) {
+                        checkbox.checked = selectAllCheckbox.checked;
+                    });
+                });
+            });
+        }
+
+        // Review workflow functionality
+        function initializeReviewWorkflow() {
+            const continueBtn = document.getElementById('continueToReview');
+            const addMoreBtn = document.getElementById('addMoreStudents');
+            
+            if (continueBtn) {
+                continueBtn.addEventListener('click', function() {
+                    const selectedStudents = getSelectedStudents();
+                    if (selectedStudents.length === 0) {
+                        alert('Please select at least one student before continuing.');
+                        return;
+                    }
+                    showReviewSection(selectedStudents);
+                });
+            }
+            
+            if (addMoreBtn) {
+                addMoreBtn.addEventListener('click', function() {
+                    showStudentSelectionSection();
+                });
+            }
+        }
+
+        function getSelectedStudents() {
+            const selectedStudents = [];
+            const checkboxes = document.querySelectorAll('.student-checkbox:checked');
+            
+            checkboxes.forEach(function(checkbox) {
+                const row = checkbox.closest('tr');
+                const studentId = checkbox.value;
+                const studentIdCell = row.cells[1].textContent.trim();
+                const nameCell = row.cells[2].textContent.trim();
+                const groupCell = row.cells[3].textContent.trim();
+                
+                selectedStudents.push({
+                    id: studentId,
+                    studentId: studentIdCell,
+                    name: nameCell,
+                    group: groupCell
+                });
+            });
+            
+            return selectedStudents;
+        }
+
+        function showReviewSection(selectedStudents) {
+            const studentSelectionSection = document.getElementById('studentSelectionSection');
+            const reviewSection = document.getElementById('reviewSection');
+            const selectedStudentsTable = document.getElementById('selectedStudentsTable');
+            const selectedStudentIds = document.getElementById('selectedStudentIds');
+            
+            // Hide student selection section
+            studentSelectionSection.style.display = 'none';
+            
+            // Show review section
+            reviewSection.style.display = 'block';
+            
+            // Populate selected students table
+            selectedStudentsTable.innerHTML = '';
+            const studentIds = [];
+            
+            selectedStudents.forEach(function(student) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${student.studentId}</td>
+                    <td>${student.name}</td>
+                    <td>${student.group}</td>
+                    <td>
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-student" data-student-id="${student.id}">
+                            <i class="bi bi-trash"></i> Remove
+                        </button>
+                    </td>
+                `;
+                selectedStudentsTable.appendChild(row);
+                studentIds.push(student.id);
+            });
+            
+            // Update hidden input with selected student IDs
+            selectedStudentIds.value = studentIds.join(',');
+            
+            // Add event listeners for remove buttons
+            document.querySelectorAll('.remove-student').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const studentId = this.getAttribute('data-student-id');
+                    removeStudentFromReview(studentId);
+                });
+            });
+        }
+
+        function showStudentSelectionSection() {
+            const studentSelectionSection = document.getElementById('studentSelectionSection');
+            const reviewSection = document.getElementById('reviewSection');
+            
+            // Show student selection section
+            studentSelectionSection.style.display = 'block';
+            
+            // Hide review section
+            reviewSection.style.display = 'none';
+        }
+
+        function removeStudentFromReview(studentId) {
+            // Uncheck the checkbox in the student selection section
+            const checkbox = document.querySelector(`input[value="${studentId}"]`);
+            if (checkbox) {
+                checkbox.checked = false;
+            }
+            
+            // Remove from review table
+            const removeBtn = document.querySelector(`button[data-student-id="${studentId}"]`);
+            if (removeBtn) {
+                removeBtn.closest('tr').remove();
+            }
+            
+            // Update hidden input
+            updateSelectedStudentIds();
+            
+            // If no students left, go back to selection
+            const remainingRows = document.querySelectorAll('#selectedStudentsTable tr');
+            if (remainingRows.length === 0) {
+                showStudentSelectionSection();
+            }
+        }
+
+        function updateSelectedStudentIds() {
+            const selectedStudentIds = document.getElementById('selectedStudentIds');
+            const remainingIds = [];
+            
+            document.querySelectorAll('.remove-student').forEach(function(btn) {
+                remainingIds.push(btn.getAttribute('data-student-id'));
+            });
+            
+            selectedStudentIds.value = remainingIds.join(',');
+        }
+
+        // Form submission handling
+        function initializeFormSubmission() {
+            const studentForm = document.querySelector('form[asp-action="AllocateToStudents"]');
+            const groupForm = document.querySelector('form[asp-action="AllocateToGroup"]');
+            const submitBtn = document.getElementById('submitAllocation');
+            
+            // Handle individual student allocation form
+            if (studentForm && submitBtn) {
+                studentForm.addEventListener('submit', function(e) {
+                    const selectedStudentIds = document.getElementById('selectedStudentIds');
+                    
+                    if (!selectedStudentIds.value || selectedStudentIds.value.trim() === '') {
+                        e.preventDefault();
+                        alert('Please select at least one student before submitting.');
+                        return false;
+                    }
+                    
+                    // Convert comma-separated IDs to individual hidden inputs
+                    const studentIds = selectedStudentIds.value.split(',').filter(id => id.trim() !== '');
+                    
+                    // Remove existing studentIds inputs
+                    document.querySelectorAll('input[name="studentIds"]').forEach(input => {
+                        if (input.type === 'hidden') {
+                            input.remove();
+                        }
+                    });
+                    
+                    // Add hidden inputs for each selected student ID
+                    studentIds.forEach(function(studentId) {
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'studentIds';
+                        hiddenInput.value = studentId.trim();
+                        studentForm.appendChild(hiddenInput);
+                    });
+                });
+            }
+            
+            // Handle group allocation form
+            if (groupForm) {
+                groupForm.addEventListener('submit', function(e) {
+                    const allocatedStudentIds = document.getElementById('allocatedStudentIds');
+                    
+                    if (allocatedStudentIds && allocatedStudentIds.value && allocatedStudentIds.value.trim() !== '') {
+                        // Convert comma-separated IDs to individual hidden inputs
+                        const studentIds = allocatedStudentIds.value.split(',').filter(id => id.trim() !== '');
+                        
+                        // Remove existing studentIds inputs
+                        document.querySelectorAll('input[name="studentIds"]').forEach(input => {
+                            if (input.type === 'hidden') {
+                                input.remove();
+                            }
+                        });
+                        
+                        // Add hidden inputs for each allocated student ID
+                        studentIds.forEach(function(studentId) {
+                            const hiddenInput = document.createElement('input');
+                            hiddenInput.type = 'hidden';
+                            hiddenInput.name = 'studentIds';
+                            hiddenInput.value = studentId.trim();
+                            groupForm.appendChild(hiddenInput);
+                        });
+                    }
+                });
+            }
+        }
+
+        // Group allocation functionality
+        function initializeGroupAllocation() {
+            const groupSelect = document.getElementById('groupSelectGroup');
+            const viewGroupStudentsBtn = document.getElementById('viewGroupStudents');
+            
+            if (groupSelect && viewGroupStudentsBtn) {
+                groupSelect.addEventListener('change', function() {
+                    const selectedGroupId = this.value;
+                    if (selectedGroupId) {
+                        viewGroupStudentsBtn.disabled = false;
+                        viewGroupStudentsBtn.addEventListener('click', function() {
+                            loadGroupStudents(selectedGroupId);
+                        });
+                    } else {
+                        viewGroupStudentsBtn.disabled = true;
+                        document.getElementById('groupStudentsSection').style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        async function loadGroupStudents(groupId) {
+            try {
+                const response = await fetch(`/TestAllocations/GetStudentsByGroup?groupId=${groupId}`);
+                if (response.ok) {
+                    const students = await response.json();
+                    displayGroupStudents(students);
+                } else {
+                    console.error('Error loading group students');
+                }
+            } catch (error) {
+                console.error('Error loading group students:', error);
+            }
+        }
+
+        function displayGroupStudents(students) {
+            const groupStudentsSection = document.getElementById('groupStudentsSection');
+            const groupStudentsTableBody = document.getElementById('groupStudentsTableBody');
+            
+            // Show the section
+            groupStudentsSection.style.display = 'block';
+            
+            // Clear existing rows
+            groupStudentsTableBody.innerHTML = '';
+            
+            // Populate students
+            students.forEach(function(student) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${student.studentUsername || student.id}</td>
+                    <td>${student.firstName} ${student.lastName}</td>
+                    <td>${student.className || 'No Class'}</td>
+                `;
+                groupStudentsTableBody.appendChild(row);
+            });
+            
+            // Show review section if students exist
+            if (students.length > 0) {
+                showReviewAllocatedStudents(students);
+            }
+        }
+
+        function showReviewAllocatedStudents(students) {
+            const reviewSection = document.getElementById('reviewAllocatedStudentsSection');
+            const allocatedStudentsTable = document.getElementById('allocatedStudentsTable');
+            const allocatedStudentsCount = document.getElementById('allocatedStudentsCount');
+            const allocatedStudentIds = document.getElementById('allocatedStudentIds');
+            
+            // Show review section
+            reviewSection.style.display = 'block';
+            
+            // Update count
+            allocatedStudentsCount.textContent = `${students.length} student${students.length !== 1 ? 's' : ''}`;
+            
+            // Populate allocated students table
+            allocatedStudentsTable.innerHTML = '';
+            const studentIds = [];
+            
+            students.forEach(function(student) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${student.studentUsername || student.id}</td>
+                    <td>${student.firstName} ${student.lastName}</td>
+                    <td>${student.className || 'No Class'}</td>
+                    <td>
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-allocated-student" data-student-id="${student.id}">
+                            <i class="bi bi-trash"></i> Remove
+                        </button>
+                    </td>
+                `;
+                allocatedStudentsTable.appendChild(row);
+                studentIds.push(student.id);
+            });
+            
+            // Update hidden input
+            allocatedStudentIds.value = studentIds.join(',');
+            
+            // Add event listeners for remove buttons
+            document.querySelectorAll('.remove-allocated-student').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const studentId = this.getAttribute('data-student-id');
+                    removeAllocatedStudent(studentId);
+                });
+            });
+        }
+
+        function removeAllocatedStudent(studentId) {
+            // Remove from allocated students table
+            const removeBtn = document.querySelector(`button[data-student-id="${studentId}"]`);
+            if (removeBtn) {
+                removeBtn.closest('tr').remove();
+            }
+            
+            // Update hidden input
+            updateAllocatedStudentIds();
+            
+            // Update count
+            const remainingRows = document.querySelectorAll('#allocatedStudentsTable tr');
+            const countElement = document.getElementById('allocatedStudentsCount');
+            countElement.textContent = `${remainingRows.length} student${remainingRows.length !== 1 ? 's' : ''}`;
+            
+            // Hide section if no students left
+            if (remainingRows.length === 0) {
+                document.getElementById('reviewAllocatedStudentsSection').style.display = 'none';
+            }
+        }
+
+        function updateAllocatedStudentIds() {
+            const allocatedStudentIds = document.getElementById('allocatedStudentIds');
+            const remainingIds = [];
+            
+            document.querySelectorAll('.remove-allocated-student').forEach(function(btn) {
+                remainingIds.push(btn.getAttribute('data-student-id'));
+            });
+            
+            allocatedStudentIds.value = remainingIds.join(',');
+        }
+
     </script>
 }
 

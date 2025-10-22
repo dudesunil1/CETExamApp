@@ -29,7 +29,10 @@ namespace CETExamApp.Models
         [Phone]
         public string? ParentsMobileNo { get; set; }
         
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        [StringLength(10)]
+        public string Gender { get; set; } = "Male";
+        
+        public DateTime CreatedDate { get; set; } = DateTime.Now.AddHours(5.5); // IST default
         
         public bool IsActive { get; set; } = true;
 

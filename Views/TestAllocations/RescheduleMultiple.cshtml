@@ -1,4 +1,5 @@
 @model List<CETExamApp.Models.TestAllocation>
+@using CETExamApp.Helpers
 @{
     ViewData["Title"] = "Reschedule Test for Multiple Students";
     var test = ViewBag.Test as CETExamApp.Models.Test;
@@ -43,8 +44,8 @@
                                     </td>
                                     <td>
                                         <small>
-                                            @(allocation.ScheduledStartTime?.ToLocalTime().ToString("dd/MM HH:mm") ?? "Not set") - 
-                                            @(allocation.ScheduledEndTime?.ToLocalTime().ToString("dd/MM HH:mm") ?? "Not set")
+                                            @(allocation.ScheduledStartTime?.ToIST().ToString("dd/MM HH:mm") ?? "Not set")@(allocation.ScheduledStartTime != null ? " IST" : "") - 
+                                            @(allocation.ScheduledEndTime?.ToIST().ToString("dd/MM HH:mm") ?? "Not set")@(allocation.ScheduledEndTime != null ? " IST" : "")
                                         </small>
                                     </td>
                                 </tr>

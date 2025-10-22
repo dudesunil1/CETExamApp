@@ -1,0 +1,6 @@
+StudentName,ClassId,GroupId,MobileNo,Username,Password,Email,Gender
+John Doe,1,1,9876543210,john.doe,password123,john@example.com,Male
+Jane Smith,1,2,9876543211,jane.smith,password456,jane@example.com,Female
+Mike Johnson,2,3,9876543212,mike.johnson,password789,mike@example.com,Male
+Sarah Wilson,2,4,9876543213,sarah.wilson,password101,sarah@example.com,Female
+David Brown,3,5,9876543214,david.brown,password202,david@example.com,Male

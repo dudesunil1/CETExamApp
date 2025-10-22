@@ -1,4 +1,5 @@
 @model CETExamApp.Models.TestAllocation
+@using CETExamApp.Helpers
 @{
     ViewData["Title"] = "Reschedule Test";
 }
@@ -23,13 +24,13 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Current Start Time</label>
-                                <input type="text" class="form-control" value="@Model.ScheduledStartTime?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")" readonly />
+                                <input type="text" class="form-control" value="@(Model.ScheduledStartTime?.ToIST().ToString("dd/MM/yyyy HH:mm") ?? "Not set")@(Model.ScheduledStartTime != null ? " IST" : "")" readonly />
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Current End Time</label>
-                                <input type="text" class="form-control" value="@Model.ScheduledEndTime?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")" readonly />
+                                <input type="text" class="form-control" value="@(Model.ScheduledEndTime?.ToIST().ToString("dd/MM/yyyy HH:mm") ?? "Not set")@(Model.ScheduledEndTime != null ? " IST" : "")" readonly />
                             </div>
                         </div>
                     </div>
@@ -43,14 +44,14 @@
                             <div class="mb-3">
                                 <label class="form-label">New Start Time</label>
                                 <input type="datetime-local" name="scheduledStartTime" class="form-control" required 
-                                       value="@Model.ScheduledStartTime?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")" />
+                                       value="@Model.ScheduledStartTime?.ToISTDateTimeLocal()" />
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">New End Time</label>
                                 <input type="datetime-local" name="scheduledEndTime" class="form-control" required 
-                                       value="@Model.ScheduledEndTime?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")" />
+                                       value="@Model.ScheduledEndTime?.ToISTDateTimeLocal()" />
                             </div>
                         </div>
                     </div>

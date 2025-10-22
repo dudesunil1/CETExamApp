@@ -29,7 +29,7 @@
                     <h5 class="mb-3 text-primary"><i class="bi bi-bookmark"></i> Academic Assignment</h5>
 
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-floating mb-3">
                                 <select asp-for="ClassId" class="form-select" asp-items="ViewBag.ClassId" id="classSelect">
                                     <option value="">-- Select Class --</option>
@@ -37,7 +37,18 @@
                                 <label asp-for="ClassId">Class (10th/11th/12th)</label>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <select asp-for="TestType" class="form-select">
+                                    <option value="0">CET</option>
+                                    <option value="1">JEE</option>
+                                    <option value="2">Exercise</option>
+                                </select>
+                                <label asp-for="TestType">Test Type</label>
+                                <span asp-validation-for="TestType" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
                             <div class="form-floating mb-3">
                                 <input asp-for="DurationMinutes" class="form-control" placeholder="Duration" />
                                 <label asp-for="DurationMinutes">Duration (Minutes)</label>

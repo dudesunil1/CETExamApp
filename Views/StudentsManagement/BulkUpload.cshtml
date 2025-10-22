@@ -1,0 +1,323 @@
+@model CETExamApp.Models.ViewModels.BulkStudentUploadViewModel
+@{
+    ViewData["Title"] = "Bulk Upload Students";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-upload"></i> Bulk Upload Students</h4>
+            </div>
+            <div class="card-body">
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show">
+                        @TempData["Success"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        @TempData["Error"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> <strong>Instructions:</strong>
+                    <ul class="mb-0">
+                        <li>Upload a CSV file with the following columns: <strong>StudentName, ClassId, GroupId, MobileNo, Username, Password, Email, Gender</strong></li>
+                        <li>First row should contain headers (will be skipped)</li>
+                        <li>ClassId and GroupId must be valid IDs from the system</li>
+                        <li>Username must be unique</li>
+                        <li>Password must be at least 6 characters long</li>
+                        <li>Email, MobileNo, and Gender are optional (Gender defaults to "Male")</li>
+                        <li><a href="/downloads/student_upload_template.csv" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-download"></i> Download Sample CSV Template
+                        </a></li>
+                    </ul>
+                </div>
+
+                <form asp-action="BulkUpload" method="post" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="File" class="form-label">CSV File</label>
+                                <input asp-for="File" type="file" class="form-control" accept=".csv" id="csvFile" />
+                                <span asp-validation-for="File" class="text-danger"></span>
+                                <div class="form-text">Select a CSV file to upload students</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-grid">
+                                    <button type="button" class="btn btn-outline-primary" id="previewBtn">
+                                        <i class="bi bi-eye"></i> Preview Data
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Sample CSV Format</label>
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <small class="text-muted">
+                                            StudentName,ClassId,GroupId,MobileNo,Username,Password,Email,Gender<br/>
+                                            John Doe,1,2,9876543210,john.doe,password123,john@example.com,Male<br/>
+                                            Jane Smith,1,3,9876543211,jane.smith,password456,jane@example.com,Female
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Available Classes & Groups</label>
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <small class="text-muted">
+                                            <strong>Classes:</strong><br/>
+                                            @foreach (var item in (SelectList)ViewData["ClassId"])
+                                            {
+                                                @($"{item.Text} (ID: {item.Value})")<br/>
+                                            }
+                                            <br/>
+                                            <strong>Groups:</strong><br/>
+                                            @foreach (var item in (SelectList)ViewData["GroupId"])
+                                            {
+                                                @($"{item.Text} (ID: {item.Value})")<br/>
+                                            }
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Students
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="uploadBtn" disabled>
+                            <i class="bi bi-upload"></i> Upload Students
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Preview Section -->
+                <div id="previewSection" class="mt-4" style="display: none;">
+                    <hr/>
+                    <h5><i class="bi bi-eye"></i> Preview Data</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="previewTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Row</th>
+                                    <th>Student Name</th>
+                                    <th>Class</th>
+                                    <th>Group</th>
+                                    <th>Username</th>
+                                    <th>Mobile No</th>
+                                    <th>Email</th>
+                                    <th>Gender</th>
+                                    <th>Status</th>
+                                    <th>Errors</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewTableBody">
+                                <!-- Preview data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Upload Results Section -->
+                @if (Model?.UploadResult != null)
+                {
+                    <div class="mt-4">
+                        <hr/>
+                        <h5><i class="bi bi-list-check"></i> Upload Results</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-primary">@Model.UploadResult.TotalRows</h5>
+                                        <p class="card-text">Total Rows</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-success">@Model.UploadResult.SuccessfulUploads</h5>
+                                        <p class="card-text">Successful</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-danger">@Model.UploadResult.FailedUploads</h5>
+                                        <p class="card-text">Failed</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (Model.UploadResult.ErrorMessages.Any())
+                        {
+                            <div class="mt-3">
+                                <h6 class="text-danger">Errors:</h6>
+                                <div class="alert alert-danger">
+                                    <ul class="mb-0">
+                                        @foreach (var error in Model.UploadResult.ErrorMessages)
+                                        {
+                                            <li>@error</li>
+                                        }
+                                    </ul>
+                                </div>
+                            </div>
+                        }
+
+                        @if (Model.UploadResult.SuccessMessages.Any())
+                        {
+                            <div class="mt-3">
+                                <h6 class="text-success">Success Messages:</h6>
+                                <div class="alert alert-success">
+                                    <ul class="mb-0">
+                                        @foreach (var success in Model.UploadResult.SuccessMessages.Take(10))
+                                        {
+                                            <li>@success</li>
+                                        }
+                                        @if (Model.UploadResult.SuccessMessages.Count > 10)
+                                        {
+                                            <li><em>... and @(Model.UploadResult.SuccessMessages.Count - 10) more</em></li>
+                                        }
+                                    </ul>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('csvFile');
+            const previewBtn = document.getElementById('previewBtn');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const previewSection = document.getElementById('previewSection');
+            const previewTableBody = document.getElementById('previewTableBody');
+
+            // Enable/disable buttons based on file selection
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    previewBtn.disabled = false;
+                    uploadBtn.disabled = false;
+                } else {
+                    previewBtn.disabled = true;
+                    uploadBtn.disabled = true;
+                    previewSection.style.display = 'none';
+                }
+            });
+
+            // Preview button click
+            previewBtn.addEventListener('click', function() {
+                if (fileInput.files.length === 0) {
+                    alert('Please select a CSV file first.');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                // Get anti-forgery token
+                const token = document.querySelector('input[name="__RequestVerificationToken"]');
+                if (token) {
+                    formData.append('__RequestVerificationToken', token.value);
+                }
+
+                fetch('/StudentsManagement/PreviewBulkUpload', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Preview data received:', data);
+                    if (data.success) {
+                        displayPreviewData(data.data);
+                        previewSection.style.display = 'block';
+                    } else {
+                        console.error('Preview error:', data);
+                        let errorMsg = data.message || 'Unknown error occurred';
+                        if (data.details) {
+                            errorMsg += '\nDetails: ' + data.details;
+                        }
+                        alert('Error: ' + errorMsg);
+                    }
+                })
+                .catch(error => {
+                    console.error('AJAX Error:', error);
+                    console.error('Error details:', error.message);
+                    alert('An error occurred while previewing the file. Please check the browser console for details. Error: ' + error.message);
+                });
+            });
+
+            function displayPreviewData(data) {
+                previewTableBody.innerHTML = '';
+                
+                data.forEach(function(student) {
+                    const row = document.createElement('tr');
+                    const statusClass = student.isValid ? 'text-success' : 'text-danger';
+                    const statusIcon = student.isValid ? 'bi-check-circle' : 'bi-x-circle';
+                    
+                    row.innerHTML = `
+                        <td>${student.rowNumber}</td>
+                        <td>${student.studentName}</td>
+                        <td>${student.className || 'Invalid Class ID: ' + student.classId}</td>
+                        <td>${student.groupName || 'Invalid Group ID: ' + student.groupId}</td>
+                        <td>${student.username}</td>
+                        <td>${student.mobileNo || '-'}</td>
+                        <td>${student.email || '-'}</td>
+                        <td>${student.gender || 'Male'}</td>
+                        <td class="${statusClass}">
+                            <i class="bi ${statusIcon}"></i>
+                            ${student.isValid ? 'Valid' : 'Invalid'}
+                        </td>
+                        <td>
+                            ${student.errors && student.errors.length > 0 ? 
+                                '<small class="text-danger">' + student.errors.join(', ') + '</small>' : 
+                                '-'}
+                        </td>
+                    `;
+                    
+                    previewTableBody.appendChild(row);
+                });
+            }
+        });
+    </script>
+}

@@ -1,0 +1,94 @@
+@model List<CETExamApp.Models.TestAllocation>
+@using CETExamApp.Helpers
+@{
+    ViewData["Title"] = "Schedule Students";
+    var schedule = ViewBag.Schedule as CETExamApp.Models.TestSchedule;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-people"></i> Students Allocated to Schedule
+                </h4>
+            </div>
+            <div class="card-body">
+                @if (schedule != null)
+                {
+                    <div class="alert alert-info">
+                        <strong>Test:</strong> @schedule.Test?.Title<br/>
+                        <strong>Schedule ID:</strong> @schedule.Id<br/>
+                        <strong>Start Time:</strong> @schedule.ScheduledStartTime.ToIST().ToString("dd/MM/yyyy HH:mm") IST<br/>
+                        <strong>End Time:</strong> @schedule.ScheduledEndTime.ToIST().ToString("dd/MM/yyyy HH:mm") IST<br/>
+                        <strong>Total Students:</strong> @Model.Count
+                    </div>
+                }
+
+                @if (Model != null && Model.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Student ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Class</th>
+                                    <th>Group</th>
+                                    <th>Allocated Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var allocation in Model)
+                                {
+                                    <tr>
+                                        <td>@allocation.Student?.StudentUsername</td>
+                                        <td>@allocation.Student?.FirstName @allocation.Student?.LastName</td>
+                                        <td>@allocation.Student?.Email</td>
+                                        <td>@allocation.Student?.Class?.Name</td>
+                                        <td>
+                                            @if (allocation.Student?.Group != null)
+                                            {
+                                                <span class="badge bg-info">@allocation.Student.Group.Name</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">No Group</span>
+                                            }
+                                        </td>
+                                        <td>@allocation.AllocatedDate.ToIST().ToString("dd/MM/yyyy HH:mm") IST</td>
+                                        <td>
+                                            @if (allocation.IsCompleted)
+                                            {
+                                                <span class="badge bg-success">Completed</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning">Pending</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
+                        <p class="mt-2 text-muted">No students allocated to this schedule.</p>
+                    </div>
+                }
+
+                <div class="mt-4">
+                    <button type="button" class="btn btn-secondary" onclick="window.close()">
+                        <i class="bi bi-x-circle"></i> Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
